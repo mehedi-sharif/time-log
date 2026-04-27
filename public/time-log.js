@@ -112,13 +112,6 @@ document.querySelectorAll("[data-range]").forEach((button) => {
   });
 });
 
-document.querySelector("#reset-demo").addEventListener("click", () => {
-  state.databaseEnabled = false;
-  state.entries = cloneEntries(sampleEntries);
-  saveEntries();
-  render();
-});
-
 entriesList.addEventListener("click", (event) => {
   const button = event.target.closest(".delete-button");
   if (!button) return;
@@ -132,6 +125,29 @@ async function init() {
   state.entries = await loadEntries();
   updateSaveStatus();
   render();
+  startPolling();
+}
+
+function startPolling() {
+  let lastDate = toLocalIsoDate(new Date());
+
+  setInterval(async () => {
+    const currentDate = toLocalIsoDate(new Date());
+    if (currentDate !== lastDate) {
+      lastDate = currentDate;
+      state.entries = await loadEntries();
+      render();
+      return;
+    }
+
+    if (!state.databaseEnabled) return;
+
+    const fresh = await fetchRemoteEntries();
+    if (fresh) {
+      state.entries = fresh;
+      render();
+    }
+  }, 30000);
 }
 
 async function loadEntries() {
