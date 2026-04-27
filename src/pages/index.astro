@@ -6,7 +6,11 @@ import "../styles/global.css";
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#1f7a6b" />
     <title>Time Log</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta
@@ -29,6 +33,7 @@ import "../styles/global.css";
             <div class="tabs" role="tablist" aria-label="Main sections">
               <button class="tab active" type="button" data-view="log">Log time</button>
               <button class="tab" type="button" data-view="insights">Insights</button>
+              <button class="tab" type="button" data-view="goals">Goals</button>
             </div>
           </section>
 
@@ -93,6 +98,21 @@ import "../styles/global.css";
               <div class="chart" id="chart" aria-label="Activity time chart"></div>
             </article>
           </section>
+          <section class="view" id="goals-view" data-panel="goals" aria-label="Goals">
+            <article class="panel goals-panel">
+              <div class="panel-heading">
+                <h2>Goals</h2>
+                <span id="goals-count">0 goals</span>
+              </div>
+              <form id="goal-form">
+                <div class="goal-input-row">
+                  <input id="goal-input" name="goal" type="text" placeholder="Add a new goal…" required />
+                  <button class="primary-button" type="submit">Add</button>
+                </div>
+              </form>
+              <div id="goals-list"></div>
+            </article>
+          </section>
         </div>
 
         <aside class="side-panel">
@@ -116,6 +136,22 @@ import "../styles/global.css";
           </div>
         </div>
         <button class="delete-button" type="button" title="Delete entry" aria-label="Delete entry">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 6h18"></path>
+            <path d="M8 6V4h8v2"></path>
+            <path d="M19 6l-1 14H6L5 6"></path>
+          </svg>
+        </button>
+      </div>
+    </template>
+
+    <template id="goal-template">
+      <div class="goal-card">
+        <label class="goal-check-label">
+          <input type="checkbox" class="goal-checkbox" />
+          <span class="goal-title"></span>
+        </label>
+        <button class="delete-button goal-delete" type="button" title="Delete goal" aria-label="Delete goal">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M3 6h18"></path>
             <path d="M8 6V4h8v2"></path>

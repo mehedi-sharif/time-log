@@ -133,12 +133,14 @@ const confirmModal = document.querySelector("#confirm-modal");
 const confirmDelete = document.querySelector("#confirm-delete");
 const confirmCancel = document.querySelector("#confirm-cancel");
 let pendingDeleteId = null;
+let pendingDeleteType = "entry";
 
 entriesList.addEventListener("click", (event) => {
   const button = event.target.closest(".delete-button");
   if (!button) return;
 
   pendingDeleteId = button.dataset.id;
+  pendingDeleteType = "entry";
   confirmModal.classList.remove("hidden");
 });
 
@@ -148,7 +150,10 @@ confirmCancel.addEventListener("click", () => {
 });
 
 confirmDelete.addEventListener("click", () => {
-  if (pendingDeleteId) deleteEntry(pendingDeleteId);
+  if (pendingDeleteId) {
+    if (pendingDeleteType === "goal") deleteGoal(pendingDeleteId);
+    else deleteEntry(pendingDeleteId);
+  }
   pendingDeleteId = null;
   confirmModal.classList.add("hidden");
 });
@@ -469,4 +474,142 @@ function formatTime(timeStr) {
   const period = h >= 12 ? "PM" : "AM";
   const hour = h % 12 || 12;
   return `${hour}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+// ── Goals ──────────────────────────────────────────────────────────────────
+
+const goalsKey = "time-log.goals";
+const goalState = { goals: [], databaseEnabled: false };
+
+const goalForm = document.querySelector("#goal-form");
+const goalInput = document.querySelector("#goal-input");
+const goalsList = document.querySelector("#goals-list");
+const goalTemplate = document.querySelector("#goal-template");
+
+initGoals();
+
+async function initGoals() {
+  goalState.goals = await loadGoals();
+  renderGoals();
+}
+
+async function loadGoals() {
+  try {
+    const res = await fetch("/api/goals");
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    if (data.database && Array.isArray(data.goals)) {
+      goalState.databaseEnabled = true;
+      localStorage.setItem(goalsKey, JSON.stringify(data.goals));
+      return data.goals;
+    }
+  } catch {}
+
+  const stored = localStorage.getItem(goalsKey);
+  if (!stored) return [];
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+
+function saveGoals() {
+  localStorage.setItem(goalsKey, JSON.stringify(goalState.goals));
+}
+
+goalForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const title = goalInput.value.trim();
+  if (!title) return;
+
+  const goal = { id: makeId(), title, completed: false, created_at: new Date().toISOString() };
+
+  if (goalState.databaseEnabled) {
+    try {
+      const res = await fetch("/api/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        goalState.goals.unshift(data.goal);
+      } else {
+        goalState.goals.unshift(goal);
+      }
+    } catch {
+      goalState.goals.unshift(goal);
+    }
+  } else {
+    goalState.goals.unshift(goal);
+  }
+
+  saveGoals();
+  goalInput.value = "";
+  renderGoals();
+});
+
+goalsList.addEventListener("change", async (e) => {
+  const checkbox = e.target.closest(".goal-checkbox");
+  if (!checkbox) return;
+  const card = checkbox.closest(".goal-card");
+  const id = card.dataset.id;
+  const goal = goalState.goals.find((g) => g.id === id);
+  if (!goal) return;
+
+  goal.completed = checkbox.checked;
+  saveGoals();
+  renderGoals();
+
+  if (goalState.databaseEnabled) {
+    fetch(`/api/goals/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completed: goal.completed }),
+    }).catch(() => {});
+  }
+});
+
+goalsList.addEventListener("click", (e) => {
+  const btn = e.target.closest(".goal-delete");
+  if (!btn) return;
+  const card = btn.closest(".goal-card");
+  pendingDeleteId = card.dataset.id;
+  pendingDeleteType = "goal";
+  confirmModal.classList.remove("hidden");
+});
+
+async function deleteGoal(id) {
+  goalState.goals = goalState.goals.filter((g) => g.id !== id);
+  saveGoals();
+  renderGoals();
+
+  if (goalState.databaseEnabled) {
+    fetch(`/api/goals/${id}`, { method: "DELETE" }).catch(() => {});
+  }
+}
+
+function renderGoals() {
+  goalsList.innerHTML = "";
+  const total = goalState.goals.length;
+  const done = goalState.goals.filter((g) => g.completed).length;
+  document.querySelector("#goals-count").textContent =
+    `${done}/${total} complete`;
+
+  if (!total) {
+    goalsList.innerHTML = '<p class="empty-state">No goals yet. Add one above.</p>';
+    return;
+  }
+
+  goalState.goals.forEach((goal) => {
+    const node = goalTemplate.content.cloneNode(true);
+    const card = node.querySelector(".goal-card");
+    card.dataset.id = goal.id;
+    const checkbox = node.querySelector(".goal-checkbox");
+    checkbox.checked = goal.completed;
+    const titleEl = node.querySelector(".goal-title");
+    titleEl.textContent = goal.title;
+    if (goal.completed) titleEl.classList.add("completed");
+    goalsList.append(node);
+  });
 }
