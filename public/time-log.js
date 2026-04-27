@@ -72,10 +72,26 @@ form.addEventListener("submit", (event) => {
 async function handleSubmit(data) {
   const startTime = data.get("start_time");
   const endTime = data.get("end_time");
+  const date = toLocalIsoDate(new Date());
+
+  const conflict = state.entries.find((e) => {
+    if (e.date !== date || !e.start_time || !e.end_time) return false;
+    const eStart = timeToMinutes(e.start_time);
+    const eEnd = timeToMinutes(e.end_time);
+    const nStart = timeToMinutes(startTime);
+    const nEnd = timeToMinutes(endTime);
+    return nStart < eEnd && nEnd > eStart;
+  });
+
+  if (conflict) {
+    flashError(`Overlaps with "${conflict.activity}" (${formatTime(conflict.start_time)} → ${formatTime(conflict.end_time)})`);
+    return;
+  }
+
   const entry = {
     id: makeId(),
     activity: data.get("activity").trim(),
-    date: toLocalIsoDate(new Date()),
+    date,
     start_time: startTime,
     end_time: endTime,
     minutes: calcMinutes(startTime, endTime),
@@ -352,9 +368,21 @@ function offsetDate(days) {
   return toLocalIsoDate(date);
 }
 
+function flashError(message) {
+  const toast = document.querySelector("#toast");
+  toast.innerHTML = `&#9888;&nbsp; ${message}`;
+  toast.style.borderLeftColor = "var(--coral)";
+  toast.classList.add("visible");
+  setTimeout(() => {
+    toast.classList.remove("visible");
+    toast.style.borderLeftColor = "";
+  }, 3500);
+}
+
 function flashSaved() {
   const toast = document.querySelector("#toast");
-  toast.textContent = "Time log saved";
+  toast.innerHTML = "&#10003;&nbsp; Time logged successfully";
+  toast.style.borderLeftColor = "";
   toast.classList.add("visible");
   setTimeout(() => toast.classList.remove("visible"), 2500);
 
