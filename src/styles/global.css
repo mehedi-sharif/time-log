@@ -555,6 +555,58 @@ textarea {
   transform: translateX(-50%) translateY(0);
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 33, 31, 0.45);
+}
+
+.modal-backdrop.hidden {
+  display: none;
+}
+
+.modal-box {
+  width: min(320px, calc(100% - 48px));
+  padding: 28px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.modal-box p {
+  margin-bottom: 20px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.modal-btn {
+  min-height: 40px;
+  padding: 0 20px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #f3f7f3;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.modal-btn.danger {
+  background: var(--coral);
+  border-color: var(--coral);
+  color: #fff;
+}
+
 #auth-gate {
   position: fixed;
   inset: 0;
@@ -596,6 +648,7 @@ textarea {
   min-height: 1.2em;
 }
 
+#auth-input,
 #auth-input::placeholder {
   font-weight: 400;
 }

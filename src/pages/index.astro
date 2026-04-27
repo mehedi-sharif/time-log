@@ -34,10 +34,8 @@ import "../styles/global.css";
           <section class="view active" id="log-view" data-panel="log" aria-label="Log time">
             <article class="panel log-panel">
               <form id="entry-form">
-                <label>
-                  What did you do?
-                  <input id="activity" name="activity" type="text" required />
-                </label>
+                <label for="activity">What did you do?</label>
+                <input id="activity" name="activity" type="text" required />
                 <div class="time-range">
                   <label>
                     From
@@ -135,6 +133,16 @@ import "../styles/global.css";
           <p id="auth-error" class="auth-error"></p>
           <button class="primary-button" type="submit">Unlock</button>
         </form>
+      </div>
+    </div>
+
+    <div id="confirm-modal" class="modal-backdrop hidden">
+      <div class="modal-box">
+        <p>Delete this entry?</p>
+        <div class="modal-actions">
+          <button id="confirm-cancel" class="modal-btn" type="button">Cancel</button>
+          <button id="confirm-delete" class="modal-btn danger" type="button">Delete</button>
+        </div>
       </div>
     </div>
 

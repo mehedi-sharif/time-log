@@ -1,5 +1,5 @@
 const authKey = "time-log.auth";
-const correctPassword = "Allah";
+const correctPassword = "allah";
 
 const authGate = document.querySelector("#auth-gate");
 const authForm = document.querySelector("#auth-form");
@@ -113,11 +113,28 @@ document.querySelectorAll("[data-range]").forEach((button) => {
   });
 });
 
+const confirmModal = document.querySelector("#confirm-modal");
+const confirmDelete = document.querySelector("#confirm-delete");
+const confirmCancel = document.querySelector("#confirm-cancel");
+let pendingDeleteId = null;
+
 entriesList.addEventListener("click", (event) => {
   const button = event.target.closest(".delete-button");
   if (!button) return;
 
-  deleteEntry(button.dataset.id);
+  pendingDeleteId = button.dataset.id;
+  confirmModal.classList.remove("hidden");
+});
+
+confirmCancel.addEventListener("click", () => {
+  pendingDeleteId = null;
+  confirmModal.classList.add("hidden");
+});
+
+confirmDelete.addEventListener("click", () => {
+  if (pendingDeleteId) deleteEntry(pendingDeleteId);
+  pendingDeleteId = null;
+  confirmModal.classList.add("hidden");
 });
 
 init();
