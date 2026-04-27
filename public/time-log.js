@@ -82,7 +82,7 @@ async function handleSubmit(data) {
 
   const savedEntry = await createEntry(entry);
   state.entries.unshift(savedEntry);
-  if (!state.databaseEnabled) saveEntries();
+  saveEntries();
   form.reset();
   minutesInput.value = 30;
   syncQuickTimeButtons();
@@ -125,34 +125,14 @@ async function init() {
   state.entries = await loadEntries();
   updateSaveStatus();
   render();
-  startPolling();
-}
-
-function startPolling() {
-  let lastDate = toLocalIsoDate(new Date());
-
-  setInterval(async () => {
-    const currentDate = toLocalIsoDate(new Date());
-    if (currentDate !== lastDate) {
-      lastDate = currentDate;
-      state.entries = await loadEntries();
-      render();
-      return;
-    }
-
-    if (!state.databaseEnabled) return;
-
-    const fresh = await fetchRemoteEntries();
-    if (fresh) {
-      state.entries = fresh;
-      render();
-    }
-  }, 30000);
 }
 
 async function loadEntries() {
   const remoteEntries = await fetchRemoteEntries();
-  if (remoteEntries) return remoteEntries;
+  if (remoteEntries) {
+    localStorage.setItem(storageKey, JSON.stringify(remoteEntries));
+    return remoteEntries;
+  }
 
   const stored = localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
   if (!stored) return cloneEntries(sampleEntries);
@@ -160,7 +140,6 @@ async function loadEntries() {
   try {
     const parsed = JSON.parse(stored);
     if (!Array.isArray(parsed)) return cloneEntries(sampleEntries);
-    localStorage.setItem(storageKey, JSON.stringify(parsed));
     return parsed;
   } catch {
     return cloneEntries(sampleEntries);
@@ -215,10 +194,9 @@ async function deleteEntry(id) {
   state.entries = state.entries.filter((entry) => entry.id !== id);
   render();
 
-  if (!state.databaseEnabled) {
-    saveEntries();
-    return;
-  }
+  saveEntries();
+
+  if (!state.databaseEnabled) return;
 
   try {
     const response = await fetch(`/api/logs/${id}`, {
@@ -228,6 +206,7 @@ async function deleteEntry(id) {
     if (!response.ok) throw new Error("Unable to delete log.");
   } catch {
     state.entries = previousEntries;
+    saveEntries();
     render();
   }
 }
