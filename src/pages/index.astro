@@ -49,20 +49,23 @@ import "../styles/global.css";
               What did you do?
               <input id="activity" name="activity" type="text" placeholder="Client work, planning, gym..." required />
             </label>
-            <label>
-              Time spent
-              <input id="minutes" name="minutes" type="number" min="5" step="5" value="30" required />
-              <span class="quick-times" aria-label="Quick time choices">
-                <button type="button" data-minutes="15">15m</button>
-                <button type="button" data-minutes="30" class="selected">30m</button>
-                <button type="button" data-minutes="60">1h</button>
-                <button type="button" data-minutes="90">1.5h</button>
-              </span>
-            </label>
-            <label>
-              Notes
-              <textarea id="notes" name="notes" rows="2" placeholder="Optional"></textarea>
-            </label>
+            <div class="time-range">
+              <label>
+                From
+                <input id="start-time" name="start_time" type="time" required />
+              </label>
+              <span class="time-sep">→</span>
+              <label>
+                To
+                <input id="end-time" name="end_time" type="time" required />
+              </label>
+            </div>
+            <span class="quick-times" aria-label="Quick duration">
+              <button type="button" data-minutes="15">15m</button>
+              <button type="button" data-minutes="30" class="selected">30m</button>
+              <button type="button" data-minutes="60">1h</button>
+              <button type="button" data-minutes="90">1.5h</button>
+            </span>
             <button class="primary-button" type="submit">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 5v14"></path>

@@ -7,7 +7,8 @@ type TimeLogBody = {
   activity?: string;
   date?: string;
   minutes?: number;
-  notes?: string;
+  start_time?: string;
+  end_time?: string;
 };
 
 export const GET: APIRoute = async () => {
@@ -33,7 +34,8 @@ export const GET: APIRoute = async () => {
       activity: entry.activity,
       date: entry.date,
       minutes: entry.minutes,
-      notes: entry.notes || "",
+      start_time: entry.start_time || null,
+      end_time: entry.end_time || null,
       createdAt: entry.created_at,
     })),
   });
@@ -48,7 +50,8 @@ export const POST: APIRoute = async ({ request }) => {
   const activity = body.activity?.trim();
   const minutes = Number(body.minutes);
   const date = body.date?.trim();
-  const notes = body.notes?.trim() || "";
+  const start_time = body.start_time || null;
+  const end_time = body.end_time || null;
 
   if (!activity || !date || !Number.isFinite(minutes) || minutes < 1) {
     return json({ error: "Activity, date, and minutes are required." }, 400);
@@ -57,7 +60,7 @@ export const POST: APIRoute = async ({ request }) => {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from("logs")
-    .insert({ activity, date, minutes, notes })
+    .insert({ activity, date, minutes, start_time, end_time })
     .select()
     .single();
 
@@ -72,7 +75,8 @@ export const POST: APIRoute = async ({ request }) => {
         activity: data.activity,
         date: data.date,
         minutes: data.minutes,
-        notes: data.notes || "",
+        start_time: data.start_time || null,
+        end_time: data.end_time || null,
         createdAt: data.created_at,
       },
     },

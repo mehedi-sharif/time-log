@@ -5,41 +5,11 @@ const activityColors = ["#1f7a6b", "#d85f49", "#517fb8", "#529d65", "#7d679f", "
 
 const todayIso = toLocalIsoDate(new Date());
 const sampleEntries = [
-  {
-    id: makeId(),
-    activity: "Planning the week",
-    date: todayIso,
-    minutes: 45,
-    notes: "Organized tasks and cleared loose ends.",
-  },
-  {
-    id: makeId(),
-    activity: "Deep work sprint",
-    date: todayIso,
-    minutes: 110,
-    notes: "Good concentration after lunch.",
-  },
-  {
-    id: makeId(),
-    activity: "Walk and reset",
-    date: todayIso,
-    minutes: 35,
-    notes: "",
-  },
-  {
-    id: makeId(),
-    activity: "Reading notes",
-    date: offsetDate(-2),
-    minutes: 70,
-    notes: "Collected ideas for later.",
-  },
-  {
-    id: makeId(),
-    activity: "Family check-in",
-    date: offsetDate(-3),
-    minutes: 55,
-    notes: "",
-  },
+  { id: makeId(), activity: "Planning the week", date: todayIso, minutes: 45, start_time: "09:00", end_time: "09:45" },
+  { id: makeId(), activity: "Deep work sprint", date: todayIso, minutes: 110, start_time: "10:00", end_time: "11:50" },
+  { id: makeId(), activity: "Walk and reset", date: todayIso, minutes: 35, start_time: "12:00", end_time: "12:35" },
+  { id: makeId(), activity: "Reading notes", date: offsetDate(-2), minutes: 70, start_time: "14:00", end_time: "15:10" },
+  { id: makeId(), activity: "Family check-in", date: offsetDate(-3), minutes: 55, start_time: "18:00", end_time: "18:55" },
 ];
 
 const state = {
@@ -50,19 +20,30 @@ const state = {
 };
 
 const form = document.querySelector("#entry-form");
-const minutesInput = document.querySelector("#minutes");
+const startTimeInput = document.querySelector("#start-time");
+const endTimeInput = document.querySelector("#end-time");
 const chart = document.querySelector("#chart");
 const entriesList = document.querySelector("#entries");
 const template = document.querySelector("#entry-template");
 
+initTimeInputs();
+
 document.querySelectorAll("[data-minutes]").forEach((button) => {
   button.addEventListener("click", () => {
-    minutesInput.value = button.dataset.minutes;
+    if (startTimeInput.value) {
+      endTimeInput.value = minutesToTime(timeToMinutes(startTimeInput.value) + parseInt(button.dataset.minutes));
+    }
     syncQuickTimeButtons();
   });
 });
 
-minutesInput.addEventListener("input", () => {
+startTimeInput.addEventListener("change", () => {
+  const duration = getDurationMinutes() || 30;
+  endTimeInput.value = minutesToTime(timeToMinutes(startTimeInput.value) + duration);
+  syncQuickTimeButtons();
+});
+
+endTimeInput.addEventListener("change", () => {
   syncQuickTimeButtons();
 });
 
@@ -72,19 +53,22 @@ form.addEventListener("submit", (event) => {
 });
 
 async function handleSubmit(data) {
+  const startTime = data.get("start_time");
+  const endTime = data.get("end_time");
   const entry = {
     id: makeId(),
     activity: data.get("activity").trim(),
     date: toLocalIsoDate(new Date()),
-    minutes: Number(data.get("minutes")),
-    notes: data.get("notes").trim(),
+    start_time: startTime,
+    end_time: endTime,
+    minutes: calcMinutes(startTime, endTime),
   };
 
   const savedEntry = await createEntry(entry);
   state.entries.unshift(savedEntry);
   saveEntries();
   form.reset();
-  minutesInput.value = 30;
+  initTimeInputs();
   syncQuickTimeButtons();
   flashSaved();
   render();
@@ -300,8 +284,11 @@ function renderEntries(entries) {
   entries.forEach((entry) => {
     const node = template.content.cloneNode(true);
     node.querySelector(".entry-title").textContent = entry.activity;
-    node.querySelector(".entry-meta").textContent = `${formatDate(entry.date)} · ${formatMinutes(entry.minutes)}`;
-    node.querySelector(".entry-notes").textContent = entry.notes;
+    const timeLabel = entry.start_time
+      ? `${formatTime(entry.start_time)} → ${formatTime(entry.end_time)}`
+      : formatMinutes(entry.minutes);
+    node.querySelector(".entry-meta").textContent = `${formatDate(entry.date)} · ${timeLabel}`;
+    node.querySelector(".entry-notes").textContent = "";
     node.querySelector(".activity-dot").style.background = activityColors[colorIndexFor(entry.activity)];
     node.querySelector(".delete-button").dataset.id = entry.id;
     entriesList.append(node);
@@ -375,7 +362,48 @@ function colorIndexFor(value) {
 }
 
 function syncQuickTimeButtons() {
+  const duration = getDurationMinutes();
   document.querySelectorAll("[data-minutes]").forEach((button) => {
-    button.classList.toggle("selected", button.dataset.minutes === minutesInput.value);
+    button.classList.toggle("selected", parseInt(button.dataset.minutes) === duration);
   });
+}
+
+function timeToMinutes(timeStr) {
+  const [h, m] = timeStr.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minutesToTime(totalMinutes) {
+  const wrapped = ((totalMinutes % 1440) + 1440) % 1440;
+  const h = Math.floor(wrapped / 60);
+  const m = wrapped % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function getDurationMinutes() {
+  if (!startTimeInput.value || !endTimeInput.value) return 0;
+  let diff = timeToMinutes(endTimeInput.value) - timeToMinutes(startTimeInput.value);
+  if (diff <= 0) diff += 1440;
+  return diff;
+}
+
+function calcMinutes(startTime, endTime) {
+  if (!startTime || !endTime) return 0;
+  let diff = timeToMinutes(endTime) - timeToMinutes(startTime);
+  if (diff <= 0) diff += 1440;
+  return diff;
+}
+
+function initTimeInputs() {
+  const now = new Date();
+  now.setMinutes(Math.floor(now.getMinutes() / 5) * 5, 0, 0);
+  startTimeInput.value = minutesToTime(now.getHours() * 60 + now.getMinutes());
+  endTimeInput.value = minutesToTime(now.getHours() * 60 + now.getMinutes() + 30);
+}
+
+function formatTime(timeStr) {
+  const [h, m] = timeStr.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, "0")} ${period}`;
 }
