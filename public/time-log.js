@@ -342,7 +342,7 @@ function offsetDate(days) {
 
 function flashSaved() {
   const status = document.querySelector("#save-status");
-  status.textContent = state.databaseEnabled ? "Saved to Supabase" : "Saved locally";
+  status.querySelector(".status-dot").classList.toggle("connected", state.databaseEnabled);
   window.setTimeout(() => {
     updateSaveStatus();
   }, 1200);
@@ -350,7 +350,7 @@ function flashSaved() {
 
 function updateSaveStatus() {
   const status = document.querySelector("#save-status");
-  status.textContent = state.databaseEnabled ? "Supabase connected" : "Saved locally";
+  status.querySelector(".status-dot").classList.toggle("connected", state.databaseEnabled);
 }
 
 function toLocalIsoDate(date) {

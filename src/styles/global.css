@@ -227,6 +227,19 @@ h2 {
   font-size: 0.86rem;
 }
 
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: background 0.3s;
+}
+
+.status-dot.connected {
+  background: var(--green);
+}
+
 form {
   display: grid;
   gap: 14px;
