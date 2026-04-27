@@ -14,108 +14,99 @@ import "../styles/global.css";
     />
   </head>
   <body>
+    <header class="site-header">
+      <div class="app-shell">
+        <p class="eyebrow">Simple time tracker</p>
+        <h1 id="page-title">Time Log</h1>
+      </div>
+    </header>
+
     <main class="app-shell">
-      <section class="hero" aria-labelledby="page-title">
-        <div>
-          <p class="eyebrow">Simple time tracker</p>
-          <h1 id="page-title">Time Log</h1>
+      <div class="app-layout">
+        <div class="main-content">
+          <section class="toolbar" aria-label="App sections">
+            <div class="tabs" role="tablist" aria-label="Main sections">
+              <button class="tab active" type="button" data-view="log">Log time</button>
+              <button class="tab" type="button" data-view="insights">Insights</button>
+            </div>
+          </section>
+
+          <section class="view active" id="log-view" data-panel="log" aria-label="Log time">
+            <article class="panel log-panel">
+              <div class="panel-heading">
+                <span id="save-status"><span class="status-dot"></span></span>
+              </div>
+              <form id="entry-form">
+                <label>
+                  What did you do?
+                  <input id="activity" name="activity" type="text" required />
+                </label>
+                <div class="time-range">
+                  <label>
+                    From
+                    <input id="start-time" name="start_time" type="time" required />
+                  </label>
+                  <span class="time-sep">→</span>
+                  <label>
+                    To
+                    <input id="end-time" name="end_time" type="time" required />
+                  </label>
+                </div>
+                <span class="quick-times" aria-label="Quick duration">
+                  <button type="button" data-minutes="15">15m</button>
+                  <button type="button" data-minutes="30" class="selected">30m</button>
+                  <button type="button" data-minutes="60">1h</button>
+                  <button type="button" data-minutes="90">1.5h</button>
+                </span>
+                <button class="primary-button" type="submit" style="margin-top: 12px;">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 5v14"></path>
+                    <path d="M5 12h14"></path>
+                  </svg>
+                  Save Time
+                </button>
+              </form>
+            </article>
+          </section>
+
+          <section class="view" id="insights-view" data-panel="insights" aria-label="Time insights">
+            <article class="panel insight-panel">
+              <div class="panel-heading">
+                <h2>Where time went</h2>
+                <span id="range-label">Today</span>
+              </div>
+              <div class="range-tabs" role="tablist" aria-label="Insight range">
+                <button class="range-tab active" type="button" data-range="today">Today</button>
+                <button class="range-tab" type="button" data-range="week">Week</button>
+                <button class="range-tab" type="button" data-range="all">All</button>
+              </div>
+              <div class="stat-row">
+                <div>
+                  <span>Total time</span>
+                  <strong id="total-time">0h 00m</strong>
+                </div>
+                <div>
+                  <span>Top activity</span>
+                  <strong id="top-activity">None</strong>
+                </div>
+                <div>
+                  <span>Logs</span>
+                  <strong id="log-count-stat">0</strong>
+                </div>
+              </div>
+              <div class="chart" id="chart" aria-label="Activity time chart"></div>
+            </article>
+          </section>
         </div>
-        <div class="today-card" aria-label="Today summary">
-          <span class="today-label">Today</span>
-          <strong id="today-total">0h 00m</strong>
-          <span id="today-focus">No entries yet</span>
-        </div>
-      </section>
 
-      <section class="toolbar" aria-label="App sections">
-        <div class="tabs" role="tablist" aria-label="Main sections">
-          <button class="tab active" type="button" data-view="log">Log time</button>
-          <button class="tab" type="button" data-view="insights">Insights</button>
-          <button class="tab" type="button" data-view="logs">Logs</button>
-        </div>
-      </section>
-
-      <section class="view active" id="log-view" data-panel="log" aria-label="Log time">
-        <article class="panel log-panel">
-          <div class="panel-heading">
-            <span id="save-status"><span class="status-dot"></span></span>
-          </div>
-          <form id="entry-form">
-            <label>
-              What did you do?
-              <input id="activity" name="activity" type="text" required />
-            </label>
-            <div class="time-range">
-              <label>
-                From
-                <input id="start-time" name="start_time" type="time" required />
-              </label>
-              <span class="time-sep">→</span>
-              <label>
-                To
-                <input id="end-time" name="end_time" type="time" required />
-              </label>
-            </div>
-            <span class="quick-times" aria-label="Quick duration">
-              <button type="button" data-minutes="15">15m</button>
-              <button type="button" data-minutes="30" class="selected">30m</button>
-              <button type="button" data-minutes="60">1h</button>
-              <button type="button" data-minutes="90">1.5h</button>
-            </span>
-            <button class="primary-button" type="submit">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 5v14"></path>
-                <path d="M5 12h14"></path>
-              </svg>
-              Save log
-            </button>
-          </form>
-        </article>
-      </section>
-
-      <section class="view" id="insights-view" data-panel="insights" aria-label="Time insights">
-        <article class="panel insight-panel">
-          <div class="panel-heading">
-            <h2>Where time went</h2>
-            <span id="range-label">Today</span>
-          </div>
-          <div class="range-tabs" role="tablist" aria-label="Insight range">
-            <button class="range-tab active" type="button" data-range="today">Today</button>
-            <button class="range-tab" type="button" data-range="week">Week</button>
-            <button class="range-tab" type="button" data-range="all">All</button>
-          </div>
-          <div class="stat-row">
-            <div>
-              <span>Total time</span>
-              <strong id="total-time">0h 00m</strong>
-            </div>
-            <div>
-              <span>Top activity</span>
-              <strong id="top-activity">None</strong>
-            </div>
-            <div>
-              <span>Logs</span>
-              <strong id="log-count-stat">0</strong>
-            </div>
-          </div>
-          <div class="chart" id="chart" aria-label="Activity time chart"></div>
-        </article>
-      </section>
-
-      <section class="view" id="logs-view" data-panel="logs" aria-label="Log history">
-        <article class="panel entries-panel">
-          <div class="panel-heading">
-            <h2>Entries</h2>
-            <span id="entry-count">0 logs</span>
-          </div>
-          <div class="range-tabs" role="tablist" aria-label="Log range">
-            <button class="range-tab active" type="button" data-range="today">Today</button>
-            <button class="range-tab" type="button" data-range="week">Week</button>
-            <button class="range-tab" type="button" data-range="all">All</button>
+        <aside class="side-panel">
+          <div class="today-card" aria-label="Today summary">
+            <span class="today-label">Today</span>
+            <strong id="today-total">0h 00m</strong>
           </div>
           <div class="entries" id="entries"></div>
-        </article>
-      </section>
+        </aside>
+      </div>
     </main>
 
     <template id="entry-template">

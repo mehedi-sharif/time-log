@@ -4,13 +4,6 @@ const legacyStorageKey = "energy-log.entries";
 const activityColors = ["#1f7a6b", "#d85f49", "#517fb8", "#529d65", "#7d679f", "#b88724"];
 
 const todayIso = toLocalIsoDate(new Date());
-const sampleEntries = [
-  { id: makeId(), activity: "Planning the week", date: todayIso, minutes: 45, start_time: "09:00", end_time: "09:45" },
-  { id: makeId(), activity: "Deep work sprint", date: todayIso, minutes: 110, start_time: "10:00", end_time: "11:50" },
-  { id: makeId(), activity: "Walk and reset", date: todayIso, minutes: 35, start_time: "12:00", end_time: "12:35" },
-  { id: makeId(), activity: "Reading notes", date: offsetDate(-2), minutes: 70, start_time: "14:00", end_time: "15:10" },
-  { id: makeId(), activity: "Family check-in", date: offsetDate(-3), minutes: 55, start_time: "18:00", end_time: "18:55" },
-];
 
 const state = {
   view: "log",
@@ -119,14 +112,14 @@ async function loadEntries() {
   }
 
   const stored = localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
-  if (!stored) return cloneEntries(sampleEntries);
+  if (!stored) return [];
 
   try {
     const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) return cloneEntries(sampleEntries);
+    if (!Array.isArray(parsed)) return [];
     return parsed;
   } catch {
-    return cloneEntries(sampleEntries);
+    return [];
   }
 }
 
@@ -202,18 +195,14 @@ function render() {
   const todayTotals = summarize(todayEntries);
 
   document.querySelector("#today-total").textContent = formatMinutes(todayTotals.total);
-  document.querySelector("#today-focus").textContent = todayTotals.topActivity
-    ? `${todayTotals.topActivity} has the most time`
-    : "No entries yet";
 
   document.querySelector("#range-label").textContent = labelForRange(state.range);
   document.querySelector("#total-time").textContent = formatMinutes(totals.total);
   document.querySelector("#top-activity").textContent = totals.topActivity || "None";
   document.querySelector("#log-count-stat").textContent = `${visibleEntries.length}`;
-  document.querySelector("#entry-count").textContent = `${visibleEntries.length} ${visibleEntries.length === 1 ? "log" : "logs"}`;
 
   renderChart(totals.byActivity, totals.total);
-  renderEntries(visibleEntries);
+  renderEntries(todayEntries);
 }
 
 function filterEntries(entries, range) {
@@ -277,7 +266,7 @@ function renderEntries(entries) {
   entriesList.innerHTML = "";
 
   if (!entries.length) {
-    entriesList.innerHTML = '<p class="empty-state">No logs in this range yet.</p>';
+    entriesList.innerHTML = '<p class="empty-state">No entries yet.</p>';
     return;
   }
 
