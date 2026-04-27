@@ -323,6 +323,11 @@ function offsetDate(days) {
 }
 
 function flashSaved() {
+  const toast = document.querySelector("#toast");
+  toast.textContent = "Time log saved";
+  toast.classList.add("visible");
+  setTimeout(() => toast.classList.remove("visible"), 2500);
+
   const status = document.querySelector("#save-status");
   status.querySelector(".status-dot").classList.toggle("connected", state.databaseEnabled);
   window.setTimeout(() => {
