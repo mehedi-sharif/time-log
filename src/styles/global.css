@@ -246,11 +246,13 @@ h2 {
 
 .status-dot {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: var(--line);
   transition: background 0.3s;
+  vertical-align: middle;
+  margin-left: 4px;
 }
 
 .status-dot.connected {

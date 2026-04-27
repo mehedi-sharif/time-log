@@ -17,7 +17,7 @@ import "../styles/global.css";
     <header class="site-header">
       <div class="app-shell">
         <p class="eyebrow">Simple time tracker</p>
-        <h1 id="page-title">Time Log</h1>
+        <h1 id="page-title">Time Log <span id="save-status"><span class="status-dot"></span></span></h1>
       </div>
     </header>
 
@@ -33,9 +33,6 @@ import "../styles/global.css";
 
           <section class="view active" id="log-view" data-panel="log" aria-label="Log time">
             <article class="panel log-panel">
-              <div class="panel-heading">
-                <span id="save-status"><span class="status-dot"></span></span>
-              </div>
               <form id="entry-form">
                 <label>
                   What did you do?
