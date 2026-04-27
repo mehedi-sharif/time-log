@@ -1,0 +1,150 @@
+---
+import "../styles/global.css";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Time Log</title>
+    <meta
+      name="description"
+      content="A simple browser-based time log that stores entries locally without a database."
+    />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Simple time tracker</p>
+          <h1 id="page-title">Time Log</h1>
+          <p class="intro">
+            Add what you did and how long it took. Your logs stay in this browser, with no database or account needed.
+          </p>
+        </div>
+        <div class="today-card" aria-label="Today summary">
+          <span class="today-label">Today</span>
+          <strong id="today-total">0h 00m</strong>
+          <span id="today-focus">No entries yet</span>
+        </div>
+      </section>
+
+      <section class="toolbar" aria-label="App sections">
+        <div class="tabs" role="tablist" aria-label="Main sections">
+          <button class="tab active" type="button" data-view="log">Log time</button>
+          <button class="tab" type="button" data-view="insights">Insights</button>
+          <button class="tab" type="button" data-view="logs">Logs</button>
+        </div>
+        <button class="icon-button" id="reset-demo" type="button" title="Restore sample entries" aria-label="Restore sample entries">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+            <path d="M3 4v6h6"></path>
+          </svg>
+        </button>
+      </section>
+
+      <section class="view active" id="log-view" data-panel="log" aria-label="Log time">
+        <article class="panel log-panel">
+          <div class="panel-heading">
+            <h2>Log time</h2>
+            <span id="save-status">Saved locally</span>
+          </div>
+          <form id="entry-form">
+            <label>
+              What did you do?
+              <input id="activity" name="activity" type="text" placeholder="Client work, planning, gym..." required />
+            </label>
+            <label>
+              Time spent
+              <input id="minutes" name="minutes" type="number" min="5" step="5" value="30" required />
+              <span class="quick-times" aria-label="Quick time choices">
+                <button type="button" data-minutes="15">15m</button>
+                <button type="button" data-minutes="30" class="selected">30m</button>
+                <button type="button" data-minutes="60">1h</button>
+                <button type="button" data-minutes="90">1.5h</button>
+              </span>
+            </label>
+            <label>
+              Notes
+              <textarea id="notes" name="notes" rows="2" placeholder="Optional"></textarea>
+            </label>
+            <button class="primary-button" type="submit">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5v14"></path>
+                <path d="M5 12h14"></path>
+              </svg>
+              Save log
+            </button>
+          </form>
+        </article>
+      </section>
+
+      <section class="view" id="insights-view" data-panel="insights" aria-label="Time insights">
+        <article class="panel insight-panel">
+          <div class="panel-heading">
+            <h2>Where time went</h2>
+            <span id="range-label">Today</span>
+          </div>
+          <div class="range-tabs" role="tablist" aria-label="Insight range">
+            <button class="range-tab active" type="button" data-range="today">Today</button>
+            <button class="range-tab" type="button" data-range="week">Week</button>
+            <button class="range-tab" type="button" data-range="all">All</button>
+          </div>
+          <div class="stat-row">
+            <div>
+              <span>Total time</span>
+              <strong id="total-time">0h 00m</strong>
+            </div>
+            <div>
+              <span>Top activity</span>
+              <strong id="top-activity">None</strong>
+            </div>
+            <div>
+              <span>Logs</span>
+              <strong id="log-count-stat">0</strong>
+            </div>
+          </div>
+          <div class="chart" id="chart" aria-label="Activity time chart"></div>
+        </article>
+      </section>
+
+      <section class="view" id="logs-view" data-panel="logs" aria-label="Log history">
+        <article class="panel entries-panel">
+          <div class="panel-heading">
+            <h2>Entries</h2>
+            <span id="entry-count">0 logs</span>
+          </div>
+          <div class="range-tabs" role="tablist" aria-label="Log range">
+            <button class="range-tab active" type="button" data-range="today">Today</button>
+            <button class="range-tab" type="button" data-range="week">Week</button>
+            <button class="range-tab" type="button" data-range="all">All</button>
+          </div>
+          <div class="entries" id="entries"></div>
+        </article>
+      </section>
+    </main>
+
+    <template id="entry-template">
+      <div class="entry-card">
+        <div class="entry-main">
+          <span class="activity-dot"></span>
+          <div>
+            <strong class="entry-title"></strong>
+            <p class="entry-meta"></p>
+            <p class="entry-notes"></p>
+          </div>
+        </div>
+        <button class="delete-button" type="button" title="Delete entry" aria-label="Delete entry">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 6h18"></path>
+            <path d="M8 6V4h8v2"></path>
+            <path d="M19 6l-1 14H6L5 6"></path>
+          </svg>
+        </button>
+      </div>
+    </template>
+
+    <script src="/time-log.js" defer></script>
+  </body>
+</html>

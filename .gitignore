@@ -1,0 +1,8 @@
+.env
+.env.local
+node_modules/
+dist/
+.vercel/
+.astro/
+.DS_Store
+*.tgz
