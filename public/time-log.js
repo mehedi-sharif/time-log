@@ -1,3 +1,27 @@
+const authKey = "time-log.auth";
+const correctPassword = "Allah";
+
+const authGate = document.querySelector("#auth-gate");
+const authForm = document.querySelector("#auth-form");
+const authInput = document.querySelector("#auth-input");
+const authError = document.querySelector("#auth-error");
+
+if (localStorage.getItem(authKey) === "1") {
+  authGate.classList.add("hidden");
+}
+
+authForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (authInput.value === correctPassword) {
+    localStorage.setItem(authKey, "1");
+    authGate.classList.add("hidden");
+  } else {
+    authError.textContent = "Incorrect password. Try again.";
+    authInput.value = "";
+    authInput.focus();
+  }
+});
+
 const storageKey = "time-log.entries";
 const legacyStorageKey = "energy-log.entries";
 

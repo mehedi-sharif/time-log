@@ -126,6 +126,18 @@ import "../styles/global.css";
       </div>
     </template>
 
+    <div id="auth-gate">
+      <div class="auth-box">
+        <p class="eyebrow">Time Log</p>
+        <h2>Enter password</h2>
+        <form id="auth-form">
+          <input id="auth-input" type="password" placeholder="Password" autocomplete="current-password" />
+          <p id="auth-error" class="auth-error"></p>
+          <button class="primary-button" type="submit">Unlock</button>
+        </form>
+      </div>
+    </div>
+
     <div id="toast" aria-live="polite"></div>
     <script src="/time-log.js" defer></script>
   </body>
