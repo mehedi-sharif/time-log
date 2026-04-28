@@ -522,51 +522,44 @@ textarea {
 
 .entry-actions {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 2px;
+  flex-direction: column;
+  gap: 6px;
   flex: 0 0 auto;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.entry-card:hover .entry-actions {
-  opacity: 1;
 }
 
 .edit-button,
 .delete-button {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  background: transparent;
-  transition: background 0.12s, color 0.12s;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.entry-card:hover .edit-button,
+.entry-card:hover .delete-button {
+  opacity: 1;
 }
 
 .edit-button {
-  color: var(--muted);
-}
-
-.edit-button:hover {
-  background: #eef3f8;
-  color: var(--sky);
+  background: var(--green);
+  color: #fff;
+  border-radius: 7px;
 }
 
 .delete-button {
-  color: var(--muted);
-}
-
-.delete-button:hover {
   background: #f8ebe8;
   color: var(--coral);
+  border-radius: 7px;
 }
 
 .edit-button svg,
 .delete-button svg {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
 }
 
 @media (max-width: 860px) {
