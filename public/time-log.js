@@ -1,5 +1,4 @@
 const authKey = "time-log.auth";
-const correctPassword = "allah";
 
 const authGate = document.querySelector("#auth-gate");
 const authForm = document.querySelector("#auth-form");
@@ -10,15 +9,28 @@ if (localStorage.getItem(authKey) === "1") {
   authGate.classList.add("hidden");
 }
 
-authForm.addEventListener("submit", (e) => {
+authForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-  if (authInput.value === correctPassword) {
-    localStorage.setItem(authKey, "1");
-    authGate.classList.add("hidden");
-  } else {
-    authError.textContent = "Incorrect password. Try again.";
-    authInput.value = "";
-    authInput.focus();
+  const password = authInput.value;
+
+  try {
+    const res = await fetch("/api/auth", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      localStorage.setItem(authKey, "1");
+      authGate.classList.add("hidden");
+    } else {
+      authError.textContent = "Incorrect password. Try again.";
+      authInput.value = "";
+      authInput.focus();
+    }
+  } catch {
+    authError.textContent = "Could not verify password. Try again.";
   }
 });
 
