@@ -522,46 +522,51 @@ textarea {
 
 .entry-actions {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
   flex: 0 0 auto;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.entry-card:hover .entry-actions {
+  opacity: 1;
 }
 
 .edit-button,
 .delete-button {
   display: grid;
   place-items: center;
-  flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: transparent;
+  transition: background 0.12s, color 0.12s;
 }
 
 .edit-button {
-  background: #eef3f8;
-  color: var(--sky);
-  opacity: 0;
-  transition: opacity 0.15s;
+  color: var(--muted);
 }
 
-.entry-card:hover .edit-button {
-  opacity: 1;
+.edit-button:hover {
+  background: #eef3f8;
+  color: var(--sky);
 }
 
 .delete-button {
-  background: #f8ebe8;
-  color: var(--coral);
-  opacity: 0;
-  transition: opacity 0.15s;
+  color: var(--muted);
 }
 
-.entry-card:hover .delete-button {
-  opacity: 1;
+.delete-button:hover {
+  background: #f8ebe8;
+  color: var(--coral);
 }
 
 .edit-button svg,
 .delete-button svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
 }
 
 @media (max-width: 860px) {
