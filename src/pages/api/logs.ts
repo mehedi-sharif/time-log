@@ -65,7 +65,7 @@ export const POST: APIRoute = async ({ request }) => {
     .single();
 
   if (error || !data) {
-    return json({ error: "Failed to save log." }, 500);
+return json({ error: "Failed to save log." }, 500);
   }
 
   return json(

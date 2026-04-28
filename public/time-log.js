@@ -22,9 +22,6 @@ authForm.addEventListener("submit", (e) => {
   }
 });
 
-const storageKey = "time-log.entries";
-const legacyStorageKey = "energy-log.entries";
-
 const activityColors = ["#1f7a6b", "#d85f49", "#517fb8", "#529d65", "#7d679f", "#b88724"];
 
 const todayIso = toLocalIsoDate(new Date());
@@ -33,7 +30,6 @@ const state = {
   view: "log",
   range: "today",
   entries: [],
-  databaseEnabled: false,
 };
 
 const form = document.querySelector("#entry-form");
@@ -99,7 +95,6 @@ async function handleSubmit(data) {
 
   const savedEntry = await createEntry(entry);
   state.entries.unshift(savedEntry);
-  saveEntries();
   form.reset();
   initTimeInputs();
   syncQuickTimeButtons();
@@ -168,25 +163,7 @@ async function init() {
 
 async function loadEntries() {
   const remoteEntries = await fetchRemoteEntries();
-  if (remoteEntries) {
-    localStorage.setItem(storageKey, JSON.stringify(remoteEntries));
-    return remoteEntries;
-  }
-
-  const stored = localStorage.getItem(storageKey) || localStorage.getItem(legacyStorageKey);
-  if (!stored) return [];
-
-  try {
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch {
-    return [];
-  }
-}
-
-function saveEntries() {
-  localStorage.setItem(storageKey, JSON.stringify(state.entries));
+  return remoteEntries ?? [];
 }
 
 async function fetchRemoteEntries() {
@@ -197,7 +174,6 @@ async function fetchRemoteEntries() {
     const data = await response.json();
     if (!data.database || !Array.isArray(data.entries)) return null;
 
-    state.databaseEnabled = true;
     return data.entries;
   } catch {
     return null;
@@ -205,27 +181,15 @@ async function fetchRemoteEntries() {
 }
 
 async function createEntry(entry) {
-  if (!state.databaseEnabled) {
-    saveEntries();
-    return entry;
-  }
+  const response = await fetch("/api/logs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(entry),
+  });
 
-  try {
-    const response = await fetch("/api/logs", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(entry),
-    });
-
-    if (!response.ok) throw new Error("Unable to save log.");
-    const data = await response.json();
-    return data.entry;
-  } catch {
-    state.databaseEnabled = false;
-    return entry;
-  }
+  if (!response.ok) throw new Error("Unable to save log.");
+  const data = await response.json();
+  return data.entry;
 }
 
 async function deleteEntry(id) {
@@ -233,19 +197,11 @@ async function deleteEntry(id) {
   state.entries = state.entries.filter((entry) => entry.id !== id);
   render();
 
-  saveEntries();
-
-  if (!state.databaseEnabled) return;
-
   try {
-    const response = await fetch(`/api/logs/${id}`, {
-      method: "DELETE",
-    });
-
+    const response = await fetch(`/api/logs/${id}`, { method: "DELETE" });
     if (!response.ok) throw new Error("Unable to delete log.");
   } catch {
     state.entries = previousEntries;
-    saveEntries();
     render();
   }
 }
@@ -392,15 +348,11 @@ function flashSaved() {
   setTimeout(() => toast.classList.remove("visible"), 2500);
 
   const status = document.querySelector("#save-status");
-  status.querySelector(".status-dot").classList.toggle("connected", state.databaseEnabled);
-  window.setTimeout(() => {
-    updateSaveStatus();
-  }, 1200);
+  updateSaveStatus();
 }
 
 function updateSaveStatus() {
-  const status = document.querySelector("#save-status");
-  status.querySelector(".status-dot").classList.toggle("connected", state.databaseEnabled);
+  document.querySelector("#save-status .status-dot").classList.add("connected");
 }
 
 function toLocalIsoDate(date) {
@@ -478,8 +430,7 @@ function formatTime(timeStr) {
 
 // ── Goals ──────────────────────────────────────────────────────────────────
 
-const goalsKey = "time-log.goals";
-const goalState = { goals: [], databaseEnabled: false };
+const goalState = { goals: [] };
 
 const goalForm = document.querySelector("#goal-form");
 const goalInput = document.querySelector("#goal-input");
@@ -498,23 +449,9 @@ async function loadGoals() {
     const res = await fetch("/api/goals");
     if (!res.ok) throw new Error();
     const data = await res.json();
-    if (data.database && Array.isArray(data.goals)) {
-      goalState.databaseEnabled = true;
-      localStorage.setItem(goalsKey, JSON.stringify(data.goals));
-      return data.goals;
-    }
+    if (data.database && Array.isArray(data.goals)) return data.goals;
   } catch {}
-
-  const stored = localStorage.getItem(goalsKey);
-  if (!stored) return [];
-  try {
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch { return []; }
-}
-
-function saveGoals() {
-  localStorage.setItem(goalsKey, JSON.stringify(goalState.goals));
+  return [];
 }
 
 goalForm.addEventListener("submit", async (e) => {
@@ -522,29 +459,18 @@ goalForm.addEventListener("submit", async (e) => {
   const title = goalInput.value.trim();
   if (!title) return;
 
-  const goal = { id: makeId(), title, completed: false, created_at: new Date().toISOString() };
-
-  if (goalState.databaseEnabled) {
-    try {
-      const res = await fetch("/api/goals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        goalState.goals.unshift(data.goal);
-      } else {
-        goalState.goals.unshift(goal);
-      }
-    } catch {
-      goalState.goals.unshift(goal);
+  try {
+    const res = await fetch("/api/goals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      goalState.goals.unshift(data.goal);
     }
-  } else {
-    goalState.goals.unshift(goal);
-  }
+  } catch {}
 
-  saveGoals();
   goalInput.value = "";
   renderGoals();
 });
@@ -558,16 +484,13 @@ goalsList.addEventListener("change", async (e) => {
   if (!goal) return;
 
   goal.completed = checkbox.checked;
-  saveGoals();
   renderGoals();
 
-  if (goalState.databaseEnabled) {
-    fetch(`/api/goals/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completed: goal.completed }),
-    }).catch(() => {});
-  }
+  fetch(`/api/goals/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ completed: goal.completed }),
+  }).catch(() => {});
 });
 
 goalsList.addEventListener("click", (e) => {
@@ -581,12 +504,8 @@ goalsList.addEventListener("click", (e) => {
 
 async function deleteGoal(id) {
   goalState.goals = goalState.goals.filter((g) => g.id !== id);
-  saveGoals();
   renderGoals();
-
-  if (goalState.databaseEnabled) {
-    fetch(`/api/goals/${id}`, { method: "DELETE" }).catch(() => {});
-  }
+  fetch(`/api/goals/${id}`, { method: "DELETE" }).catch(() => {});
 }
 
 function renderGoals() {
