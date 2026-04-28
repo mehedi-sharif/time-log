@@ -135,13 +135,21 @@ import "../styles/global.css";
             <p class="entry-notes"></p>
           </div>
         </div>
-        <button class="delete-button" type="button" title="Delete entry" aria-label="Delete entry">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 6h18"></path>
-            <path d="M8 6V4h8v2"></path>
-            <path d="M19 6l-1 14H6L5 6"></path>
-          </svg>
-        </button>
+        <div class="entry-actions">
+          <button class="edit-button" type="button" title="Edit entry" aria-label="Edit entry">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+          <button class="delete-button" type="button" title="Delete entry" aria-label="Delete entry">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 6h18"></path>
+              <path d="M8 6V4h8v2"></path>
+              <path d="M19 6l-1 14H6L5 6"></path>
+            </svg>
+          </button>
+        </div>
       </div>
     </template>
 
@@ -169,6 +177,33 @@ import "../styles/global.css";
           <input id="auth-input" type="password" placeholder="Password" autocomplete="current-password" />
           <p id="auth-error" class="auth-error"></p>
           <button class="primary-button" type="submit">Unlock</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="edit-modal" class="modal-backdrop hidden">
+      <div class="modal-box">
+        <h2>Edit entry</h2>
+        <form id="edit-form">
+          <label>
+            What did you do?
+            <input id="edit-activity" name="activity" type="text" required />
+          </label>
+          <div class="time-range">
+            <label>
+              From
+              <input id="edit-start-time" name="start_time" type="time" required />
+            </label>
+            <span class="time-sep">→</span>
+            <label>
+              To
+              <input id="edit-end-time" name="end_time" type="time" required />
+            </label>
+          </div>
+          <div class="modal-actions">
+            <button id="edit-cancel" class="modal-btn" type="button">Cancel</button>
+            <button class="modal-btn primary" type="submit">Save</button>
+          </div>
         </form>
       </div>
     </div>

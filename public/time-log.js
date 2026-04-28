@@ -143,13 +143,72 @@ let pendingDeleteId = null;
 let pendingDeleteType = "entry";
 
 entriesList.addEventListener("click", (event) => {
-  const button = event.target.closest(".delete-button");
-  if (!button) return;
+  if (event.target.closest(".delete-button")) {
+    pendingDeleteId = event.target.closest(".delete-button").dataset.id;
+    pendingDeleteType = "entry";
+    confirmModal.classList.remove("hidden");
+    return;
+  }
 
-  pendingDeleteId = button.dataset.id;
-  pendingDeleteType = "entry";
-  confirmModal.classList.remove("hidden");
+  const editBtn = event.target.closest(".edit-button");
+  if (editBtn) openEditModal(editBtn.dataset.id);
 });
+
+const editModal = document.querySelector("#edit-modal");
+const editForm = document.querySelector("#edit-form");
+const editCancel = document.querySelector("#edit-cancel");
+let editingId = null;
+
+editCancel.addEventListener("click", () => {
+  editModal.classList.add("hidden");
+  editingId = null;
+});
+
+editModal.addEventListener("click", (e) => {
+  if (e.target === editModal) {
+    editModal.classList.add("hidden");
+    editingId = null;
+  }
+});
+
+editForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!editingId) return;
+
+  const activity = document.querySelector("#edit-activity").value.trim();
+  const start_time = document.querySelector("#edit-start-time").value;
+  const end_time = document.querySelector("#edit-end-time").value;
+  const minutes = calcMinutes(start_time, end_time);
+
+  try {
+    const res = await fetch(`/api/logs/${editingId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activity, start_time, end_time, minutes }),
+    });
+    if (!res.ok) throw new Error();
+    const { entry } = await res.json();
+
+    const idx = state.entries.findIndex((e) => e.id === editingId);
+    if (idx !== -1) state.entries[idx] = { ...state.entries[idx], ...entry };
+    render();
+  } catch {}
+
+  editModal.classList.add("hidden");
+  editingId = null;
+});
+
+function openEditModal(id) {
+  const entry = state.entries.find((e) => e.id === id);
+  if (!entry) return;
+
+  editingId = id;
+  document.querySelector("#edit-activity").value = entry.activity;
+  document.querySelector("#edit-start-time").value = entry.start_time || "";
+  document.querySelector("#edit-end-time").value = entry.end_time || "";
+  editModal.classList.remove("hidden");
+  document.querySelector("#edit-activity").focus();
+}
 
 confirmCancel.addEventListener("click", () => {
   pendingDeleteId = null;
@@ -309,6 +368,7 @@ function renderEntries(entries) {
     node.querySelector(".entry-meta").textContent = `${formatDate(entry.date)} · ${timeLabel}`;
     node.querySelector(".entry-notes").textContent = "";
     node.querySelector(".activity-dot").style.background = activityColors[colorIndexFor(entry.activity)];
+    node.querySelector(".edit-button").dataset.id = entry.id;
     node.querySelector(".delete-button").dataset.id = entry.id;
     entriesList.append(node);
   });
