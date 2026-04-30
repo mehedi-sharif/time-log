@@ -356,114 +356,96 @@ function renderChart(byActivity, total) {
 const TIMELINE_START = 6;  // 6 AM
 const TIMELINE_END   = 23; // 11 PM
 
-function segmentLabel(hour) {
-  if (hour < 12) return "🌅 Morning";
-  if (hour < 17) return "☀️ Noon";
-  return "🌙 Evening";
-}
-
 function minsToTimeStr(mins) {
   return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
 }
 
+const HOUR_HEIGHT = 48; // px per hour in the calendar grid
+
 function renderEntries(todayEntries) {
   entriesList.innerHTML = "";
 
-  const startMins = TIMELINE_START * 60;
-  const endMins   = TIMELINE_END   * 60;
+  const startMins  = TIMELINE_START * 60;
+  const endMins    = TIMELINE_END   * 60;
+  const totalHours = TIMELINE_END - TIMELINE_START;
 
-  // Sort entries that fall within the visible timeline window
-  const sorted = [...todayEntries]
-    .map((e) => ({
-      ...e,
-      sMins: Math.max(timeToMinutes(e.start_time), startMins),
-      eMins: Math.min(timeToMinutes(e.end_time),   endMins),
-    }))
-    .filter((e) => e.eMins > e.sMins && e.eMins > startMins)
-    .sort((a, b) => a.sMins - b.sMins);
+  // Outer scroll container
+  entriesList.style.position = "relative";
 
-  // Build chunks: entries + gaps between them, gaps split at hour boundaries
-  const chunks = [];
-  let cursor = startMins;
+  const grid = document.createElement("div");
+  grid.className = "tl-grid";
+  grid.style.height = totalHours * HOUR_HEIGHT + "px";
 
-  function addGap(from, to) {
-    let g = from;
-    while (g < to) {
-      const nextHour = Math.ceil((g + 1) / 60) * 60;
-      const gEnd = Math.min(nextHour, to);
-      chunks.push({ type: "empty", start: g, end: gEnd });
-      g = gEnd;
-    }
+  // ── Hour grid lines + labels ───────────────────────────────────────────────
+  for (let hour = TIMELINE_START; hour <= TIMELINE_END; hour++) {
+    const top   = (hour - TIMELINE_START) * HOUR_HEIGHT;
+    const h12   = hour % 12 || 12;
+    const ampm  = hour < 12 ? "a" : "p";
+
+    const row = document.createElement("div");
+    row.className = "tl-hour-row";
+    row.style.top = top + "px";
+    row.innerHTML = `<span class="tl-hour-label">${h12}${ampm}</span>`;
+    grid.append(row);
   }
+
+  // ── Current-time indicator ─────────────────────────────────────────────────
+  const now     = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  if (nowMins >= startMins && nowMins < endMins) {
+    const nowEl = document.createElement("div");
+    nowEl.className = "tl-now";
+    nowEl.style.top = (nowMins - startMins) / 60 * HOUR_HEIGHT + "px";
+    grid.append(nowEl);
+  }
+
+  // ── Click empty space → pre-fill form ─────────────────────────────────────
+  grid.addEventListener("click", (e) => {
+    if (e.target.closest(".tl-entry")) return;
+    const y       = e.clientY - grid.getBoundingClientRect().top;
+    const raw     = (y / HOUR_HEIGHT) * 60 + startMins;
+    const snapped = Math.round(raw / 15) * 15;
+    const s       = Math.max(startMins, Math.min(snapped, endMins - 30));
+    startTimeInput.value = minsToTimeStr(s);
+    endTimeInput.value   = minsToTimeStr(Math.min(s + 30, endMins));
+    syncQuickTimeButtons();
+    document.querySelector("#activity").focus();
+    document.querySelector("#activity").scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  // ── Entry blocks ───────────────────────────────────────────────────────────
+  const sorted = [...todayEntries]
+    .filter((e) => e.start_time && e.end_time)
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
   for (const entry of sorted) {
-    if (entry.sMins > cursor) addGap(cursor, entry.sMins);
-    chunks.push({ type: "filled", entry, start: entry.sMins, end: entry.eMins });
-    cursor = Math.max(cursor, entry.eMins);
-  }
-  addGap(cursor, endMins);
+    const sMins = Math.max(timeToMinutes(entry.start_time), startMins);
+    const eMins = Math.min(timeToMinutes(entry.end_time),   endMins);
+    if (eMins <= sMins) continue;
 
-  // Render chunks with segment headers
-  let lastSegment = null;
+    const top    = (sMins - startMins) / 60 * HOUR_HEIGHT;
+    const height = Math.max((eMins - sMins) / 60 * HOUR_HEIGHT, 28);
+    const color  = activityColors[colorIndexFor(entry.activity)];
+    const tall   = height >= 42;
 
-  for (const chunk of chunks) {
-    const seg = segmentLabel(Math.floor(chunk.start / 60));
-    if (seg !== lastSegment) {
-      const divider = document.createElement("div");
-      divider.className = "timeline-segment";
-      divider.textContent = seg;
-      entriesList.append(divider);
-      lastSegment = seg;
-    }
-
-    const startStr = minsToTimeStr(chunk.start);
-    const endStr   = minsToTimeStr(chunk.end);
-    const duration = chunk.end - chunk.start;
-    const slot     = document.createElement("div");
-
-    if (chunk.type === "filled") {
-      const { entry } = chunk;
-      slot.className = "timeline-slot filled";
-      slot.style.borderLeftColor = activityColors[colorIndexFor(entry.activity)];
-      slot.innerHTML = `
-        <span class="slot-time">${formatTime(entry.start_time)} – ${formatTime(entry.end_time)}</span>
-        <div class="slot-body">
-          <span class="slot-activity"></span>
-          <span class="slot-duration">${formatMinutes(entry.minutes)}</span>
-        </div>
-        <button class="delete-button slot-delete" type="button" data-id="${entry.id}" aria-label="Delete entry">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg>
-        </button>
-      `;
-      slot.querySelector(".slot-activity").textContent = entry.activity;
-    } else {
-      // Empty gap — clicking pre-fills the exact gap time (capped at 30 min for long gaps)
-      const fillEnd = duration <= 30 ? endStr : minsToTimeStr(chunk.start + 30);
-      slot.className = "timeline-slot empty";
-      slot.dataset.start = startStr;
-      slot.dataset.end   = fillEnd;
-      const gapLabel = duration < 60
-        ? `${duration}m free`
-        : `${Math.floor(duration / 60)}h${duration % 60 ? ` ${duration % 60}m` : ""} free`;
-      slot.innerHTML = `
-        <span class="slot-time">${formatTime(startStr)}</span>
-        <span class="slot-empty-label">+ log time</span>
-        <span class="slot-gap-duration">${gapLabel}</span>
-      `;
-      slot.addEventListener("click", () => {
-        startTimeInput.value = startStr;
-        endTimeInput.value   = fillEnd;
-        syncQuickTimeButtons();
-        document.querySelector("#activity").focus();
-        document.querySelector("#activity").scrollIntoView({ behavior: "smooth", block: "center" });
-      });
-    }
-
-    entriesList.append(slot);
+    const block = document.createElement("div");
+    block.className = "tl-entry";
+    block.style.cssText = `top:${top}px;height:${height}px;border-left-color:${color};background:${color}22;`;
+    block.innerHTML = `
+      <div class="tl-entry-inner">
+        <span class="tl-entry-name"></span>
+        ${tall ? `<span class="tl-entry-time">${formatTime(entry.start_time)} – ${formatTime(entry.end_time)}</span>` : ""}
+      </div>
+      <button class="delete-button tl-delete" type="button" data-id="${entry.id}" aria-label="Delete entry">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg>
+      </button>
+    `;
+    block.querySelector(".tl-entry-name").textContent = entry.activity;
+    grid.append(block);
   }
 
-  // Wire up delete buttons on filled slots
-  entriesList.querySelectorAll(".slot-delete").forEach((btn) => {
+  // ── Wire delete buttons ────────────────────────────────────────────────────
+  grid.querySelectorAll(".tl-delete").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       pendingDeleteId   = btn.dataset.id;
@@ -471,6 +453,14 @@ function renderEntries(todayEntries) {
       confirmModal.classList.remove("hidden");
     });
   });
+
+  entriesList.append(grid);
+
+  // Scroll to show current time (or 8 AM if before timeline)
+  const scrollTo = nowMins >= startMins
+    ? Math.max(0, (nowMins - startMins - 60) / 60 * HOUR_HEIGHT)
+    : (8 - TIMELINE_START) * HOUR_HEIGHT;
+  entriesList.scrollTop = scrollTo;
 }
 
 function formatMinutes(minutes) {
