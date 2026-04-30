@@ -477,32 +477,110 @@ textarea {
   gap: 10px;
 }
 
-.segment-header {
+/* ── Timeline ─────────────────────────────── */
+.timeline {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 2px;
-  margin-top: 6px;
-  border-bottom: 1px solid var(--line);
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 16px;
 }
 
-.segment-header:first-child {
-  margin-top: 0;
-}
-
-.segment-label {
-  font-size: 0.78rem;
+.timeline-segment {
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 4px 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 2px;
+}
+
+.timeline-segment:first-child {
+  padding-top: 4px;
+}
+
+.timeline-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  min-height: 44px;
+  transition: background 0.15s;
+}
+
+.timeline-slot.empty {
+  cursor: pointer;
+  background: #f9fbf9;
+  border-style: dashed;
+}
+
+.timeline-slot.empty:hover {
+  background: #eef6f3;
+  border-color: var(--accent);
+}
+
+.timeline-slot.filled {
+  background: #ffffff;
+  border-left: 3px solid var(--accent);
+  box-shadow: 0 1px 4px rgba(22, 33, 31, 0.06);
+}
+
+.slot-time {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  min-width: 52px;
+  flex-shrink: 0;
+}
+
+.slot-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.slot-activity {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slot-duration {
+  font-size: 0.72rem;
   color: var(--muted);
 }
 
-.segment-total {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--accent);
+.slot-empty-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-style: italic;
 }
+
+.slot-delete {
+  opacity: 0;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.timeline-slot.filled:hover .slot-delete {
+  opacity: 1;
+}
+
+.slot-delete svg {
+  width: 14px;
+  height: 14px;
+}
+
 
 .entry-card {
   display: flex;
@@ -620,7 +698,7 @@ textarea {
     font-size: 1.8rem;
   }
 
-  .entries {
+  .timeline {
     display: none;
   }
 }

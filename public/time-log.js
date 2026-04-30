@@ -48,7 +48,7 @@ const form = document.querySelector("#entry-form");
 const startTimeInput = document.querySelector("#start-time");
 const endTimeInput = document.querySelector("#end-time");
 const chart = document.querySelector("#chart");
-const entriesList = document.querySelector("#entries");
+const entriesList = document.querySelector("#timeline");
 const template = document.querySelector("#entry-template");
 
 initTimeInputs();
@@ -351,61 +351,93 @@ function renderChart(byActivity, total) {
     });
 }
 
-const segments = [
-  { key: "morning",  label: "🌅 Morning",          icon: "🌅", from: 5,  to: 12 },
-  { key: "noon",     label: "☀️ Noon",              icon: "☀️", from: 12, to: 17 },
-  { key: "evening",  label: "🌙 Evening & Night",   icon: "🌙", from: 17, to: 29 }, // 29 = 5 AM next day
-];
+// ── Timeline ───────────────────────────────────────────────────────────────
 
-function segmentFor(entry) {
-  if (!entry.start_time) return "morning";
-  const h = timeToMinutes(entry.start_time) / 60;
-  if (h >= 5  && h < 12) return "morning";
-  if (h >= 12 && h < 17) return "noon";
-  return "evening";
+const TIMELINE_START = 6;  // 6 AM
+const TIMELINE_END   = 23; // 11 PM
+
+function segmentLabel(hour) {
+  if (hour < 12) return "🌅 Morning";
+  if (hour < 17) return "☀️ Noon";
+  return "🌙 Evening";
 }
 
-function renderEntries(entries) {
+function entryForHour(entries, hour) {
+  // Return entry whose time overlaps with [hour, hour+1)
+  return entries.find((e) => {
+    if (!e.start_time) return false;
+    const start = timeToMinutes(e.start_time) / 60;
+    const end   = timeToMinutes(e.end_time)   / 60;
+    return start < hour + 1 && end > hour;
+  });
+}
+
+function renderEntries(todayEntries) {
   entriesList.innerHTML = "";
 
-  if (!entries.length) {
-    entriesList.innerHTML = '<p class="empty-state">No entries yet.</p>';
-    return;
+  let lastSegment = null;
+
+  for (let hour = TIMELINE_START; hour < TIMELINE_END; hour++) {
+    const seg = segmentLabel(hour);
+
+    // Segment divider
+    if (seg !== lastSegment) {
+      const divider = document.createElement("div");
+      divider.className = "timeline-segment";
+      divider.textContent = seg;
+      entriesList.append(divider);
+      lastSegment = seg;
+    }
+
+    const startStr = `${String(hour).padStart(2, "0")}:00`;
+    const endStr   = `${String(hour + 1).padStart(2, "0")}:00`;
+    const entry    = entryForHour(todayEntries, hour);
+
+    const slot = document.createElement("div");
+
+    if (entry) {
+      // Filled slot
+      slot.className = "timeline-slot filled";
+      slot.style.borderLeftColor = activityColors[colorIndexFor(entry.activity)];
+      slot.innerHTML = `
+        <span class="slot-time">${formatTime(startStr)}</span>
+        <div class="slot-body">
+          <span class="slot-activity"></span>
+          <span class="slot-duration">${formatMinutes(entry.minutes)}</span>
+        </div>
+        <button class="delete-button slot-delete" type="button" data-id="${entry.id}" aria-label="Delete entry">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg>
+        </button>
+      `;
+      slot.querySelector(".slot-activity").textContent = entry.activity;
+    } else {
+      // Empty clickable slot
+      slot.className = "timeline-slot empty";
+      slot.dataset.start = startStr;
+      slot.dataset.end   = endStr;
+      slot.innerHTML = `
+        <span class="slot-time">${formatTime(startStr)}</span>
+        <span class="slot-empty-label">+ What did you do?</span>
+      `;
+      slot.addEventListener("click", () => {
+        startTimeInput.value = startStr;
+        endTimeInput.value   = endStr;
+        syncQuickTimeButtons();
+        document.querySelector("#activity").focus();
+        document.querySelector("#activity").scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+
+    entriesList.append(slot);
   }
 
-  // Sort entries by start_time ascending
-  const sorted = [...entries].sort((a, b) => {
-    const aMin = a.start_time ? timeToMinutes(a.start_time) : 0;
-    const bMin = b.start_time ? timeToMinutes(b.start_time) : 0;
-    return aMin - bMin;
-  });
-
-  segments.forEach((seg) => {
-    const segEntries = sorted.filter((e) => segmentFor(e) === seg.key);
-    if (!segEntries.length) return;
-
-    const totalMins = segEntries.reduce((sum, e) => sum + e.minutes, 0);
-
-    const header = document.createElement("div");
-    header.className = "segment-header";
-    header.innerHTML = `
-      <span class="segment-label">${seg.label}</span>
-      <span class="segment-total">${formatMinutes(totalMins)}</span>
-    `;
-    entriesList.append(header);
-
-    segEntries.forEach((entry) => {
-      const node = template.content.cloneNode(true);
-      node.querySelector(".entry-title").textContent = entry.activity;
-      const timeLabel = entry.start_time
-        ? `${formatTime(entry.start_time)} → ${formatTime(entry.end_time)}`
-        : formatMinutes(entry.minutes);
-      node.querySelector(".entry-meta").textContent = timeLabel;
-      node.querySelector(".entry-notes").textContent = "";
-      node.querySelector(".activity-dot").style.background = activityColors[colorIndexFor(entry.activity)];
-      if (node.querySelector(".edit-button")) node.querySelector(".edit-button").dataset.id = entry.id;
-      node.querySelector(".delete-button").dataset.id = entry.id;
-      entriesList.append(node);
+  // Wire up delete buttons on filled slots
+  entriesList.querySelectorAll(".slot-delete").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      pendingDeleteId   = btn.dataset.id;
+      pendingDeleteType = "entry";
+      confirmModal.classList.remove("hidden");
     });
   });
 }
