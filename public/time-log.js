@@ -418,15 +418,50 @@ function renderEntries(todayEntries) {
     grid.append(nowEl);
   }
 
-  // ── Click empty space → pre-fill form ─────────────────────────────────────
-  grid.addEventListener("click", (e) => {
-    if (e.target.closest(".tl-entry")) return;
-    const y       = e.clientY - grid.getBoundingClientRect().top - GRID_PAD;
+  // ── Hover ghost block (Google/Notion Calendar style) ──────────────────────
+  const ghost = document.createElement("div");
+  ghost.className = "tl-ghost";
+  ghost.innerHTML = `<span class="tl-ghost-label"></span>`;
+  ghost.style.display = "none";
+  grid.append(ghost);
+
+  function getSnappedSlot(clientY) {
+    const y       = clientY - grid.getBoundingClientRect().top - GRID_PAD;
     const raw     = (y / HOUR_HEIGHT) * 60 + startMins;
     const snapped = Math.round(raw / 15) * 15;
     const s       = Math.max(startMins, Math.min(snapped, endMins - 30));
+    return { s, e: Math.min(s + 30, endMins) };
+  }
+
+  function positionGhost(s, e) {
+    const top    = (s - startMins) / 60 * HOUR_HEIGHT + GRID_PAD;
+    const height = Math.max((e - s) / 60 * HOUR_HEIGHT, 28);
+    ghost.style.top     = top + "px";
+    ghost.style.height  = height + "px";
+    ghost.style.display = "block";
+    ghost.querySelector(".tl-ghost-label").textContent =
+      `${formatTime(minsToTimeStr(s))} – ${formatTime(minsToTimeStr(e))}`;
+  }
+
+  grid.addEventListener("mousemove", (e) => {
+    if (e.target.closest(".tl-entry") || e.target.closest(".tl-now")) {
+      ghost.style.display = "none";
+      return;
+    }
+    const { s, e: end } = getSnappedSlot(e.clientY);
+    positionGhost(s, end);
+  });
+
+  grid.addEventListener("mouseleave", () => {
+    ghost.style.display = "none";
+  });
+
+  // ── Click empty space → confirm ghost slot, pre-fill form ─────────────────
+  grid.addEventListener("click", (e) => {
+    if (e.target.closest(".tl-entry")) return;
+    const { s, e: end } = getSnappedSlot(e.clientY);
     startTimeInput.value = minsToTimeStr(s);
-    endTimeInput.value   = minsToTimeStr(Math.min(s + 30, endMins));
+    endTimeInput.value   = minsToTimeStr(end);
     syncQuickTimeButtons();
     document.querySelector("#activity").focus();
     document.querySelector("#activity").scrollIntoView({ behavior: "smooth", block: "center" });
