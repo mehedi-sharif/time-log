@@ -404,13 +404,17 @@ function renderEntries(todayEntries) {
     grid.append(row);
   }
 
-  // ── Current-time indicator ─────────────────────────────────────────────────
+  // ── Current-time indicator (Notion-style badge + line) ────────────────────
   const now     = new Date();
   const nowMins = now.getHours() * 60 + now.getMinutes();
   if (nowMins >= startMins && nowMins < endMins) {
-    const nowEl = document.createElement("div");
+    const h12    = now.getHours() % 12 || 12;
+    const mm     = String(now.getMinutes()).padStart(2, "0");
+    const ampm   = now.getHours() < 12 ? "AM" : "PM";
+    const nowEl  = document.createElement("div");
     nowEl.className = "tl-now";
     nowEl.style.top = (nowMins - startMins) / 60 * HOUR_HEIGHT + GRID_PAD + "px";
+    nowEl.innerHTML = `<span class="tl-now-badge">${h12}:${mm} ${ampm}</span><span class="tl-now-line"></span>`;
     grid.append(nowEl);
   }
 
