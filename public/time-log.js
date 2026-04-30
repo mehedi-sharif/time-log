@@ -360,7 +360,7 @@ function minsToTimeStr(mins) {
   return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
 }
 
-const HOUR_HEIGHT = 48; // px per hour in the calendar grid
+const HOUR_HEIGHT = 64; // px per hour — 30 min = 32px, 15 min = 16px
 const GRID_PAD    = 14; // top offset so first label stays inside the border
 
 function renderEntries(todayEntries) {
@@ -418,48 +418,35 @@ function renderEntries(todayEntries) {
     grid.append(nowEl);
   }
 
-  // ── Hover ghost block (Google/Notion Calendar style) ──────────────────────
-  const ghost = document.createElement("div");
-  ghost.className = "tl-ghost";
-  ghost.innerHTML = `<span class="tl-ghost-label"></span>`;
-  ghost.style.display = "none";
-  grid.append(ghost);
+  // ── Click → persistent selection block + pre-fill form ───────────────────
+  let selectionEl = null;
 
-  function getSnappedSlot(clientY) {
+  function snapSlot(clientY) {
     const y       = clientY - grid.getBoundingClientRect().top - GRID_PAD;
     const raw     = (y / HOUR_HEIGHT) * 60 + startMins;
     const snapped = Math.round(raw / 15) * 15;
     const s       = Math.max(startMins, Math.min(snapped, endMins - 30));
-    return { s, e: Math.min(s + 30, endMins) };
+    return { s, end: Math.min(s + 30, endMins) };
   }
 
-  function positionGhost(s, e) {
+  function placeSelection(s, end) {
+    if (selectionEl) selectionEl.remove();
     const top    = (s - startMins) / 60 * HOUR_HEIGHT + GRID_PAD;
-    const height = Math.max((e - s) / 60 * HOUR_HEIGHT, 28);
-    ghost.style.top     = top + "px";
-    ghost.style.height  = height + "px";
-    ghost.style.display = "block";
-    ghost.querySelector(".tl-ghost-label").textContent =
-      `${formatTime(minsToTimeStr(s))} – ${formatTime(minsToTimeStr(e))}`;
+    const height = Math.max((end - s) / 60 * HOUR_HEIGHT, 32);
+    selectionEl  = document.createElement("div");
+    selectionEl.className = "tl-selection";
+    selectionEl.style.cssText = `top:${top}px;height:${height}px;`;
+    selectionEl.innerHTML = `
+      <span class="tl-sel-time">${formatTime(minsToTimeStr(s))} – ${formatTime(minsToTimeStr(end))}</span>
+      <span class="tl-sel-dur">${end - s}min</span>
+    `;
+    grid.append(selectionEl);
   }
 
-  grid.addEventListener("mousemove", (e) => {
-    if (e.target.closest(".tl-entry") || e.target.closest(".tl-now")) {
-      ghost.style.display = "none";
-      return;
-    }
-    const { s, e: end } = getSnappedSlot(e.clientY);
-    positionGhost(s, end);
-  });
-
-  grid.addEventListener("mouseleave", () => {
-    ghost.style.display = "none";
-  });
-
-  // ── Click empty space → confirm ghost slot, pre-fill form ─────────────────
   grid.addEventListener("click", (e) => {
     if (e.target.closest(".tl-entry")) return;
-    const { s, e: end } = getSnappedSlot(e.clientY);
+    const { s, end } = snapSlot(e.clientY);
+    placeSelection(s, end);
     startTimeInput.value = minsToTimeStr(s);
     endTimeInput.value   = minsToTimeStr(end);
     syncQuickTimeButtons();
