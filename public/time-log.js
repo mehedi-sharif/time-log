@@ -470,12 +470,6 @@ function renderEntries(todayEntries) {
   });
 
   entriesList.append(grid);
-
-  // Scroll to show current time (or 8 AM if before timeline)
-  const scrollTo = nowMins >= startMins
-    ? Math.max(0, (nowMins - startMins - 60) / 60 * HOUR_HEIGHT)
-    : (8 - TIMELINE_START) * HOUR_HEIGHT;
-  entriesList.scrollTop = scrollTo;
 }
 
 function formatMinutes(minutes) {

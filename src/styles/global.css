@@ -476,8 +476,6 @@ textarea {
 /* ── Timeline ─────────────────────────────── */
 /* ── Calendar-style day timeline ─────────────────────────────────────── */
 .timeline {
-  overflow-y: auto;
-  max-height: calc(100vh - 220px);
   border-radius: 10px;
   background: var(--panel);
   border: 1px solid var(--line);
