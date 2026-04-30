@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   color-scheme: light;
   --ink: #16211f;
@@ -62,12 +64,6 @@ svg {
   margin-bottom: 8px;
 }
 
-.app-layout {
-  display: grid;
-  grid-template-columns: 1fr minmax(240px, 320px);
-  gap: 24px;
-  align-items: start;
-}
 
 .main-content {
   display: flex;
@@ -704,16 +700,7 @@ textarea {
     padding-top: 0;
   }
 
-  .app-layout,
-  .view.active,
-  .view.active#log-view,
-  .view.active#insights-view,
-  .view.active#goals-view {
-    grid-template-columns: 1fr;
-  }
-
   .side-panel {
-    order: -1;
     position: static;
     flex-direction: row;
     align-items: center;
