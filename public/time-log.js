@@ -395,12 +395,12 @@ function renderEntries(todayEntries) {
   for (let hour = TIMELINE_START; hour <= TIMELINE_END; hour++) {
     const top   = (hour - TIMELINE_START) * HOUR_HEIGHT;
     const h12   = hour % 12 || 12;
-    const ampm  = hour < 12 ? "a" : "p";
+    const ampm  = hour < 12 ? "AM" : "PM";
 
     const row = document.createElement("div");
     row.className = "tl-hour-row";
     row.style.top = top + "px";
-    row.innerHTML = `<span class="tl-hour-label">${h12}${ampm}</span>`;
+    row.innerHTML = `<span class="tl-hour-label">${h12} ${ampm}</span>`;
     grid.append(row);
   }
 

@@ -526,7 +526,7 @@ textarea {
 }
 
 .tl-hour-label {
-  width: 34px;
+  width: 46px;
   padding-right: 8px;
   font-size: 0.62rem;
   font-weight: 700;
@@ -547,7 +547,7 @@ textarea {
 /* Current-time indicator */
 .tl-now {
   position: absolute;
-  left: 34px;
+  left: 46px;
   right: 0;
   height: 2px;
   background: var(--coral);
@@ -569,7 +569,7 @@ textarea {
 /* Entry blocks */
 .tl-entry {
   position: absolute;
-  left: 38px;
+  left: 50px;
   right: 4px;
   border-radius: 5px;
   border-left: 3px solid;
