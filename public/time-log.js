@@ -361,6 +361,7 @@ function minsToTimeStr(mins) {
 }
 
 const HOUR_HEIGHT = 48; // px per hour in the calendar grid
+const GRID_PAD    = 14; // top offset so first label stays inside the border
 
 function renderEntries(todayEntries) {
   entriesList.innerHTML = "";
@@ -369,12 +370,11 @@ function renderEntries(todayEntries) {
   const endMins    = TIMELINE_END   * 60;
   const totalHours = TIMELINE_END - TIMELINE_START;
 
-  // Outer scroll container
   entriesList.style.position = "relative";
 
   const grid = document.createElement("div");
   grid.className = "tl-grid";
-  grid.style.height = totalHours * HOUR_HEIGHT + "px";
+  grid.style.height = totalHours * HOUR_HEIGHT + GRID_PAD + "px";
 
   // ── Period bands (Morning / Noon / Evening) ────────────────────────────────
   const periods = [
@@ -385,7 +385,7 @@ function renderEntries(todayEntries) {
   for (const p of periods) {
     const band = document.createElement("div");
     band.className = `tl-period ${p.cls}`;
-    band.style.top    = (p.start - TIMELINE_START) * HOUR_HEIGHT + "px";
+    band.style.top    = (p.start - TIMELINE_START) * HOUR_HEIGHT + GRID_PAD + "px";
     band.style.height = (p.end   - p.start)        * HOUR_HEIGHT + "px";
     band.innerHTML    = `<span class="tl-period-label">${p.label}</span>`;
     grid.append(band);
@@ -393,9 +393,9 @@ function renderEntries(todayEntries) {
 
   // ── Hour grid lines + labels ───────────────────────────────────────────────
   for (let hour = TIMELINE_START; hour <= TIMELINE_END; hour++) {
-    const top   = (hour - TIMELINE_START) * HOUR_HEIGHT;
-    const h12   = hour % 12 || 12;
-    const ampm  = hour < 12 ? "AM" : "PM";
+    const top  = (hour - TIMELINE_START) * HOUR_HEIGHT + GRID_PAD;
+    const h12  = hour % 12 || 12;
+    const ampm = hour < 12 ? "AM" : "PM";
 
     const row = document.createElement("div");
     row.className = "tl-hour-row";
@@ -410,14 +410,14 @@ function renderEntries(todayEntries) {
   if (nowMins >= startMins && nowMins < endMins) {
     const nowEl = document.createElement("div");
     nowEl.className = "tl-now";
-    nowEl.style.top = (nowMins - startMins) / 60 * HOUR_HEIGHT + "px";
+    nowEl.style.top = (nowMins - startMins) / 60 * HOUR_HEIGHT + GRID_PAD + "px";
     grid.append(nowEl);
   }
 
   // ── Click empty space → pre-fill form ─────────────────────────────────────
   grid.addEventListener("click", (e) => {
     if (e.target.closest(".tl-entry")) return;
-    const y       = e.clientY - grid.getBoundingClientRect().top;
+    const y       = e.clientY - grid.getBoundingClientRect().top - GRID_PAD;
     const raw     = (y / HOUR_HEIGHT) * 60 + startMins;
     const snapped = Math.round(raw / 15) * 15;
     const s       = Math.max(startMins, Math.min(snapped, endMins - 30));
@@ -438,7 +438,7 @@ function renderEntries(todayEntries) {
     const eMins = Math.min(timeToMinutes(entry.end_time),   endMins);
     if (eMins <= sMins) continue;
 
-    const top    = (sMins - startMins) / 60 * HOUR_HEIGHT;
+    const top    = (sMins - startMins) / 60 * HOUR_HEIGHT + GRID_PAD;
     const height = Math.max((eMins - sMins) / 60 * HOUR_HEIGHT, 28);
     const color  = activityColors[colorIndexFor(entry.activity)];
     const tall   = height >= 42;
