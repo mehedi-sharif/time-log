@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Time Log</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+
+    <div id="auth-screen" class="hidden">
+      <p class="eyebrow">Time Log</p>
+      <h1>Unlock</h1>
+      <form id="auth-form">
+        <input id="auth-input" type="password" placeholder="Password" autocomplete="current-password" />
+        <p id="auth-error" class="error"></p>
+        <button class="primary-button" type="submit">Unlock</button>
+      </form>
+    </div>
+
+    <div id="main-screen" class="hidden">
+      <header>
+        <div>
+          <p class="eyebrow">Today</p>
+          <strong id="today-total">—</strong>
+        </div>
+        <span id="status-dot" class="dot"></span>
+      </header>
+
+      <form id="log-form">
+        <input id="activity" type="text" placeholder="What did you do?" required />
+
+        <div class="time-range">
+          <label>
+            From
+            <input id="start-time" type="time" required />
+          </label>
+          <span class="sep">→</span>
+          <label>
+            To
+            <input id="end-time" type="time" required />
+          </label>
+        </div>
+
+        <div class="quick-times">
+          <button type="button" data-minutes="15">15m</button>
+          <button type="button" data-minutes="30" class="selected">30m</button>
+          <button type="button" data-minutes="60">1h</button>
+          <button type="button" data-minutes="90">1.5h</button>
+        </div>
+
+        <button class="primary-button" type="submit" id="save-btn">Save log</button>
+      </form>
+
+      <p id="toast" class="toast hidden"></p>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

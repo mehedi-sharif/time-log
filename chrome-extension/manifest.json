@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Time Log",
+  "version": "1.0",
+  "description": "Quickly log your time without opening the browser.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Time Log"
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["https://time-log-mehedi.vercel.app/*"]
+}
