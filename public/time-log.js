@@ -362,25 +362,52 @@ function segmentLabel(hour) {
   return "🌙 Evening";
 }
 
-function entryForHour(entries, hour) {
-  // Return entry whose time overlaps with [hour, hour+1)
-  return entries.find((e) => {
-    if (!e.start_time) return false;
-    const start = timeToMinutes(e.start_time) / 60;
-    const end   = timeToMinutes(e.end_time)   / 60;
-    return start < hour + 1 && end > hour;
-  });
+function minsToTimeStr(mins) {
+  return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
 }
 
 function renderEntries(todayEntries) {
   entriesList.innerHTML = "";
 
+  const startMins = TIMELINE_START * 60;
+  const endMins   = TIMELINE_END   * 60;
+
+  // Sort entries that fall within the visible timeline window
+  const sorted = [...todayEntries]
+    .map((e) => ({
+      ...e,
+      sMins: Math.max(timeToMinutes(e.start_time), startMins),
+      eMins: Math.min(timeToMinutes(e.end_time),   endMins),
+    }))
+    .filter((e) => e.eMins > e.sMins && e.eMins > startMins)
+    .sort((a, b) => a.sMins - b.sMins);
+
+  // Build chunks: entries + gaps between them, gaps split at hour boundaries
+  const chunks = [];
+  let cursor = startMins;
+
+  function addGap(from, to) {
+    let g = from;
+    while (g < to) {
+      const nextHour = Math.ceil((g + 1) / 60) * 60;
+      const gEnd = Math.min(nextHour, to);
+      chunks.push({ type: "empty", start: g, end: gEnd });
+      g = gEnd;
+    }
+  }
+
+  for (const entry of sorted) {
+    if (entry.sMins > cursor) addGap(cursor, entry.sMins);
+    chunks.push({ type: "filled", entry, start: entry.sMins, end: entry.eMins });
+    cursor = Math.max(cursor, entry.eMins);
+  }
+  addGap(cursor, endMins);
+
+  // Render chunks with segment headers
   let lastSegment = null;
 
-  for (let hour = TIMELINE_START; hour < TIMELINE_END; hour++) {
-    const seg = segmentLabel(hour);
-
-    // Segment divider
+  for (const chunk of chunks) {
+    const seg = segmentLabel(Math.floor(chunk.start / 60));
     if (seg !== lastSegment) {
       const divider = document.createElement("div");
       divider.className = "timeline-segment";
@@ -389,18 +416,17 @@ function renderEntries(todayEntries) {
       lastSegment = seg;
     }
 
-    const startStr = `${String(hour).padStart(2, "0")}:00`;
-    const endStr   = `${String(hour + 1).padStart(2, "0")}:00`;
-    const entry    = entryForHour(todayEntries, hour);
+    const startStr = minsToTimeStr(chunk.start);
+    const endStr   = minsToTimeStr(chunk.end);
+    const duration = chunk.end - chunk.start;
+    const slot     = document.createElement("div");
 
-    const slot = document.createElement("div");
-
-    if (entry) {
-      // Filled slot
+    if (chunk.type === "filled") {
+      const { entry } = chunk;
       slot.className = "timeline-slot filled";
       slot.style.borderLeftColor = activityColors[colorIndexFor(entry.activity)];
       slot.innerHTML = `
-        <span class="slot-time">${formatTime(startStr)}</span>
+        <span class="slot-time">${formatTime(entry.start_time)} – ${formatTime(entry.end_time)}</span>
         <div class="slot-body">
           <span class="slot-activity"></span>
           <span class="slot-duration">${formatMinutes(entry.minutes)}</span>
@@ -411,17 +437,22 @@ function renderEntries(todayEntries) {
       `;
       slot.querySelector(".slot-activity").textContent = entry.activity;
     } else {
-      // Empty clickable slot
+      // Empty gap — clicking pre-fills the exact gap time (capped at 30 min for long gaps)
+      const fillEnd = duration <= 30 ? endStr : minsToTimeStr(chunk.start + 30);
       slot.className = "timeline-slot empty";
       slot.dataset.start = startStr;
-      slot.dataset.end   = endStr;
+      slot.dataset.end   = fillEnd;
+      const gapLabel = duration < 60
+        ? `${duration}m free`
+        : `${Math.floor(duration / 60)}h${duration % 60 ? ` ${duration % 60}m` : ""} free`;
       slot.innerHTML = `
         <span class="slot-time">${formatTime(startStr)}</span>
-        <span class="slot-empty-label">+ What did you do?</span>
+        <span class="slot-empty-label">+ log time</span>
+        <span class="slot-gap-duration">${gapLabel}</span>
       `;
       slot.addEventListener("click", () => {
         startTimeInput.value = startStr;
-        endTimeInput.value   = endStr;
+        endTimeInput.value   = fillEnd;
         syncQuickTimeButtons();
         document.querySelector("#activity").focus();
         document.querySelector("#activity").scrollIntoView({ behavior: "smooth", block: "center" });
