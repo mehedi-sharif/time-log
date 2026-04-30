@@ -376,6 +376,21 @@ function renderEntries(todayEntries) {
   grid.className = "tl-grid";
   grid.style.height = totalHours * HOUR_HEIGHT + "px";
 
+  // ── Period bands (Morning / Noon / Evening) ────────────────────────────────
+  const periods = [
+    { label: "🌅 Morning", start: 6,  end: 12, cls: "tl-period-morning" },
+    { label: "☀️ Noon",    start: 12, end: 17, cls: "tl-period-noon"    },
+    { label: "🌙 Evening", start: 17, end: 23, cls: "tl-period-evening" },
+  ];
+  for (const p of periods) {
+    const band = document.createElement("div");
+    band.className = `tl-period ${p.cls}`;
+    band.style.top    = (p.start - TIMELINE_START) * HOUR_HEIGHT + "px";
+    band.style.height = (p.end   - p.start)        * HOUR_HEIGHT + "px";
+    band.innerHTML    = `<span class="tl-period-label">${p.label}</span>`;
+    grid.append(band);
+  }
+
   // ── Hour grid lines + labels ───────────────────────────────────────────────
   for (let hour = TIMELINE_START; hour <= TIMELINE_END; hour++) {
     const top   = (hour - TIMELINE_START) * HOUR_HEIGHT;

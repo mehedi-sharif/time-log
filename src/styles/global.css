@@ -490,6 +490,33 @@ textarea {
 }
 
 /* Hour rows: label + horizontal rule */
+/* Period bands */
+.tl-period {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.tl-period-morning { background: linear-gradient(180deg, rgba(251,191,36,0.07) 0%, rgba(251,191,36,0.03) 100%); }
+.tl-period-noon    { background: linear-gradient(180deg, rgba(56,189,248,0.06) 0%, rgba(56,189,248,0.02) 100%); }
+.tl-period-evening { background: linear-gradient(180deg, rgba(139,92,246,0.07) 0%, rgba(139,92,246,0.03) 100%); }
+
+.tl-period-label {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.7;
+  pointer-events: none;
+  user-select: none;
+}
+
 .tl-hour-row {
   position: absolute;
   left: 0;
@@ -497,6 +524,7 @@ textarea {
   display: flex;
   align-items: center;
   pointer-events: none;
+  z-index: 1;
 }
 
 .tl-hour-label {
@@ -525,7 +553,7 @@ textarea {
   right: 0;
   height: 2px;
   background: var(--coral);
-  z-index: 3;
+  z-index: 4;
   pointer-events: none;
 }
 
@@ -549,7 +577,7 @@ textarea {
   border-left: 3px solid;
   overflow: hidden;
   cursor: default;
-  z-index: 2;
+  z-index: 3;
   transition: filter 0.12s;
 }
 
