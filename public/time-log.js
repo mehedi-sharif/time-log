@@ -351,6 +351,20 @@ function renderChart(byActivity, total) {
     });
 }
 
+const segments = [
+  { key: "morning",  label: "🌅 Morning",          icon: "🌅", from: 5,  to: 12 },
+  { key: "noon",     label: "☀️ Noon",              icon: "☀️", from: 12, to: 17 },
+  { key: "evening",  label: "🌙 Evening & Night",   icon: "🌙", from: 17, to: 29 }, // 29 = 5 AM next day
+];
+
+function segmentFor(entry) {
+  if (!entry.start_time) return "morning";
+  const h = timeToMinutes(entry.start_time) / 60;
+  if (h >= 5  && h < 12) return "morning";
+  if (h >= 12 && h < 17) return "noon";
+  return "evening";
+}
+
 function renderEntries(entries) {
   entriesList.innerHTML = "";
 
@@ -359,18 +373,40 @@ function renderEntries(entries) {
     return;
   }
 
-  entries.forEach((entry) => {
-    const node = template.content.cloneNode(true);
-    node.querySelector(".entry-title").textContent = entry.activity;
-    const timeLabel = entry.start_time
-      ? `${formatTime(entry.start_time)} → ${formatTime(entry.end_time)}`
-      : formatMinutes(entry.minutes);
-    node.querySelector(".entry-meta").textContent = `${formatDate(entry.date)} · ${timeLabel}`;
-    node.querySelector(".entry-notes").textContent = "";
-    node.querySelector(".activity-dot").style.background = activityColors[colorIndexFor(entry.activity)];
-    node.querySelector(".edit-button").dataset.id = entry.id;
-    node.querySelector(".delete-button").dataset.id = entry.id;
-    entriesList.append(node);
+  // Sort entries by start_time ascending
+  const sorted = [...entries].sort((a, b) => {
+    const aMin = a.start_time ? timeToMinutes(a.start_time) : 0;
+    const bMin = b.start_time ? timeToMinutes(b.start_time) : 0;
+    return aMin - bMin;
+  });
+
+  segments.forEach((seg) => {
+    const segEntries = sorted.filter((e) => segmentFor(e) === seg.key);
+    if (!segEntries.length) return;
+
+    const totalMins = segEntries.reduce((sum, e) => sum + e.minutes, 0);
+
+    const header = document.createElement("div");
+    header.className = "segment-header";
+    header.innerHTML = `
+      <span class="segment-label">${seg.label}</span>
+      <span class="segment-total">${formatMinutes(totalMins)}</span>
+    `;
+    entriesList.append(header);
+
+    segEntries.forEach((entry) => {
+      const node = template.content.cloneNode(true);
+      node.querySelector(".entry-title").textContent = entry.activity;
+      const timeLabel = entry.start_time
+        ? `${formatTime(entry.start_time)} → ${formatTime(entry.end_time)}`
+        : formatMinutes(entry.minutes);
+      node.querySelector(".entry-meta").textContent = timeLabel;
+      node.querySelector(".entry-notes").textContent = "";
+      node.querySelector(".activity-dot").style.background = activityColors[colorIndexFor(entry.activity)];
+      if (node.querySelector(".edit-button")) node.querySelector(".edit-button").dataset.id = entry.id;
+      node.querySelector(".delete-button").dataset.id = entry.id;
+      entriesList.append(node);
+    });
   });
 }
 
