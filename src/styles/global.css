@@ -828,24 +828,51 @@ textarea {
     padding-top: 0;
   }
 
+  /* Stay column on mobile so the timeline gets full width below the today card */
   .side-panel {
     position: static;
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
     gap: 12px;
   }
 
   .today-card {
-    flex: 1;
     padding: 16px;
   }
 
   .today-card strong {
     font-size: 1.8rem;
   }
+}
 
-  .timeline {
-    display: none;
+/* Narrow-screen timeline tightening */
+@media (max-width: 600px) {
+  .tl-hour-label {
+    width: 44px;
+    padding-right: 8px;
+    font-size: 0.62rem;
+  }
+
+  .tl-period-label {
+    left: 50px;
+  }
+
+  .tl-ghost,
+  .tl-entry {
+    left: 48px;
+    right: 4px;
+  }
+
+  .tl-entry-inner {
+    padding-right: 50px;
+  }
+
+  .tl-actions {
+    gap: 2px;
+  }
+
+  .tl-action {
+    width: 24px;
+    height: 24px;
   }
 }
 
