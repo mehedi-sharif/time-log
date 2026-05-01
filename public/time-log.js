@@ -123,8 +123,13 @@ async function handleSubmit(data) {
   try {
     const savedEntry = await createEntry(tempEntry);
     const idx = state.entries.findIndex((e) => e.id === tempId);
-    if (idx !== -1) state.entries[idx] = savedEntry;
-    // No need to re-render — everything visible is identical
+    if (idx !== -1) {
+      state.entries[idx] = savedEntry;
+      // Re-render so DOM data-id attributes (used by edit/delete buttons)
+      // match the real server-side id. Without this, deleting a freshly-
+      // saved entry would no-op on the client and the entry would re-appear.
+      render();
+    }
   } catch {
     // Server save failed — keep the entry visible for this session
     // (don't roll back; user still sees their work)
