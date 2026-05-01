@@ -293,10 +293,17 @@ async function deleteEntry(id) {
 
   try {
     const response = await fetch(`/api/logs/${id}`, { method: "DELETE" });
-    if (!response.ok) throw new Error("Unable to delete log.");
-  } catch {
+    if (!response.ok) {
+      // Surface what the server actually said so the failure isn't silent
+      const body = await response.text().catch(() => "");
+      console.error(`DELETE /api/logs/${id} → HTTP ${response.status}`, body);
+      throw new Error(`HTTP ${response.status}`);
+    }
+  } catch (err) {
+    console.error("deleteEntry failed:", err);
     state.entries = previousEntries;
     render();
+    flashError("Couldn't delete on the server — entry restored. Check the console for details.");
   }
 }
 
