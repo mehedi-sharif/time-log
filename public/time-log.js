@@ -292,7 +292,13 @@ async function deleteEntry(id) {
   render();
 
   try {
-    const response = await fetch(`/api/logs/${id}`, { method: "DELETE" });
+    // Vercel's CSRF protection rejects DELETE without a Content-Type header
+    // ("Cross-site DELETE form submissions are forbidden"). Sending JSON
+    // promotes this to a CORS-preflighted XHR which Vercel allows.
+    const response = await fetch(`/api/logs/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+    });
     if (!response.ok) {
       // Surface what the server actually said so the failure isn't silent
       const body = await response.text().catch(() => "");
@@ -801,7 +807,10 @@ goalsList.addEventListener("click", (e) => {
 async function deleteGoal(id) {
   goalState.goals = goalState.goals.filter((g) => g.id !== id);
   renderGoals();
-  fetch(`/api/goals/${id}`, { method: "DELETE" }).catch(() => {});
+  fetch(`/api/goals/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  }).catch(() => {});
 }
 
 function renderGoals() {
