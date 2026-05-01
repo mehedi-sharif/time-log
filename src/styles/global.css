@@ -483,8 +483,9 @@ textarea {
 
 .tl-grid {
   position: relative;
-  padding: 0 6px 16px 0;
-  cursor: crosshair;
+  padding: 0 8px 20px 0;
+  cursor: pointer;
+  user-select: none;
 }
 
 /* Hour rows: label + horizontal rule */
@@ -503,52 +504,54 @@ textarea {
 
 .tl-period-label {
   position: absolute;
-  top: 6px;
-  right: 8px;
-  font-size: 0.62rem;
+  top: 5px;
+  left: 58px;
+  font-size: 0.58rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--muted);
-  opacity: 0.7;
+  opacity: 0.5;
   pointer-events: none;
   user-select: none;
 }
 
+/*
+ * Row's `top` (set by JS) is the EXACT pixel y of the hour line.
+ * The line sits at that y. The label is centered on it via its own transform.
+ * This guarantees entry blocks (which use the same `top` math) line up perfectly.
+ */
 .tl-hour-row {
   position: absolute;
   left: 0;
   right: 0;
-  display: flex;
-  align-items: center;
+  height: 1px;
+  background: #e6ece8;
   pointer-events: none;
   z-index: 1;
 }
 
 .tl-hour-label {
-  width: 46px;
-  padding-right: 8px;
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: var(--muted);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 52px;
+  padding-right: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9ba39e;
   text-align: right;
-  flex-shrink: 0;
+  background: var(--panel);
+  /* Center the label vertically on the line */
   transform: translateY(-50%);
   line-height: 1;
-}
-
-.tl-hour-row::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--line);
 }
 
 /* Current-time indicator — Notion-style badge + line */
 .tl-now {
   position: absolute;
   left: 0;
-  right: 4px;
+  right: 6px;
   z-index: 4;
   pointer-events: none;
   display: flex;
@@ -576,44 +579,51 @@ textarea {
   margin-left: 4px;
 }
 
-/* Click-to-select block (Notion-style) */
-.tl-selection {
+/* Hover ghost block + confirmed state (Notion Calendar style) */
+.tl-ghost {
   position: absolute;
-  left: 50px;
-  right: 4px;
-  background: rgba(31, 122, 107, 0.13);
-  border: 1.5px solid var(--accent);
-  border-radius: 6px;
+  left: 56px;
+  right: 6px;
+  border-radius: 5px;
+  border-left: 3px solid var(--accent);
+  background: rgba(31, 122, 107, 0.18);
   pointer-events: none;
-  z-index: 3;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 4px 10px;
+  padding: 3px 8px;
   gap: 1px;
+  transition: background 0.1s;
 }
 
-.tl-sel-time {
+.tl-ghost.confirmed {
+  background: rgba(31, 122, 107, 0.28);
+  box-shadow: 0 1px 6px rgba(31, 122, 107, 0.18);
+}
+
+
+.tl-ghost-time {
   font-size: 0.74rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-dark);
   white-space: nowrap;
   line-height: 1.3;
 }
 
-.tl-sel-dur {
-  font-size: 0.65rem;
+.tl-ghost-dur {
+  font-size: 0.63rem;
   font-weight: 600;
   color: var(--accent);
-  opacity: 0.7;
+  opacity: 0.8;
   line-height: 1;
 }
 
 /* Entry blocks */
 .tl-entry {
   position: absolute;
-  left: 50px;
-  right: 4px;
+  left: 56px;
+  right: 6px;
   border-radius: 5px;
   border-left: 3px solid;
   overflow: hidden;
@@ -627,7 +637,7 @@ textarea {
 }
 
 .tl-entry-inner {
-  padding: 3px 26px 3px 6px;
+  padding: 3px 56px 3px 6px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -652,29 +662,78 @@ textarea {
   line-height: 1;
 }
 
-.tl-delete {
+/* Compact (single-line) entry layout — used when block is too short for two rows */
+.tl-entry-compact .tl-entry-inner {
+  padding: 3px 56px 3px 6px;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.tl-entry-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.tl-entry-row .tl-entry-name {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.tl-entry-time-inline {
+  font-size: 0.62rem;
+  color: var(--muted);
+  white-space: nowrap;
+  flex: 0 0 auto;
+  font-weight: 500;
+}
+
+/* Horizontal edit + delete actions on every timeline entry */
+.tl-actions {
   position: absolute;
   top: 3px;
   right: 3px;
-  width: 20px;
-  height: 20px;
-  opacity: 0;
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 4px;
+  display: flex;
+  flex-direction: row;
+  gap: 3px;
+  z-index: 4;
+}
+
+.tl-action {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.92);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.15s;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(22, 33, 31, 0.12);
+  transition: transform 0.1s, background 0.1s;
   flex-shrink: 0;
 }
 
-.tl-entry:hover .tl-delete {
-  opacity: 1;
+.tl-action:hover {
+  transform: scale(1.08);
+  background: #ffffff;
 }
 
-.tl-delete svg {
-  width: 11px;
-  height: 11px;
+.tl-action svg {
+  width: 12px;
+  height: 12px;
+}
+
+.tl-edit {
+  color: var(--accent);
+}
+
+.tl-delete {
+  color: var(--coral);
 }
 
 

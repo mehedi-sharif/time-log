@@ -59,6 +59,7 @@ document.querySelectorAll("[data-minutes]").forEach((button) => {
       endTimeInput.value = minutesToTime(timeToMinutes(startTimeInput.value) + parseInt(button.dataset.minutes));
     }
     syncQuickTimeButtons();
+    syncGhostFromForm();
   });
 });
 
@@ -66,11 +67,16 @@ startTimeInput.addEventListener("change", () => {
   const duration = getDurationMinutes() || 30;
   endTimeInput.value = minutesToTime(timeToMinutes(startTimeInput.value) + duration);
   syncQuickTimeButtons();
+  syncGhostFromForm();
 });
 
 endTimeInput.addEventListener("change", () => {
   syncQuickTimeButtons();
+  syncGhostFromForm();
 });
+
+startTimeInput.addEventListener("input", syncGhostFromForm);
+endTimeInput.addEventListener("input", syncGhostFromForm);
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -82,22 +88,10 @@ async function handleSubmit(data) {
   const endTime = data.get("end_time");
   const date = toLocalIsoDate(new Date());
 
-  const conflict = state.entries.find((e) => {
-    if (e.date !== date || !e.start_time || !e.end_time) return false;
-    const eStart = timeToMinutes(e.start_time);
-    const eEnd = timeToMinutes(e.end_time);
-    const nStart = timeToMinutes(startTime);
-    const nEnd = timeToMinutes(endTime);
-    return nStart < eEnd && nEnd > eStart;
-  });
-
-  if (conflict) {
-    flashError(`Overlaps with "${conflict.activity}" (${formatTime(conflict.start_time)} → ${formatTime(conflict.end_time)})`);
-    return;
-  }
-
-  const entry = {
-    id: makeId(),
+  // Build a local entry with a temp id — show it immediately (optimistic update)
+  const tempId = makeId();
+  const tempEntry = {
+    id: tempId,
     activity: data.get("activity").trim(),
     date,
     start_time: startTime,
@@ -105,13 +99,37 @@ async function handleSubmit(data) {
     minutes: calcMinutes(startTime, endTime),
   };
 
-  const savedEntry = await createEntry(entry);
-  state.entries.unshift(savedEntry);
-  form.reset();
-  initTimeInputs();
+  state.entries.unshift(tempEntry);
+
+  // Smart re-init: advance the form to the next 30-min slot right after the
+  // just-saved entry so logging consecutive activities is fast. Falls back to
+  // current time if the saved entry's end is past the timeline window.
+  const savedEndMins = timeToMinutes(endTime);
+  const nextStart    = savedEndMins;
+  const nextEnd      = nextStart + 30;
+  if (nextEnd <= TIMELINE_END * 60) {
+    document.querySelector("#activity").value = "";
+    startTimeInput.value = minutesToTime(nextStart);
+    endTimeInput.value   = minutesToTime(nextEnd);
+  } else {
+    form.reset();
+    initTimeInputs();
+  }
   syncQuickTimeButtons();
   flashSaved();
-  render();
+  render(); // show entry immediately in the timeline
+
+  // Persist to server in the background; swap temp entry with server's version
+  try {
+    const savedEntry = await createEntry(tempEntry);
+    const idx = state.entries.findIndex((e) => e.id === tempId);
+    if (idx !== -1) state.entries[idx] = savedEntry;
+    // No need to re-render — everything visible is identical
+  } catch {
+    // Server save failed — keep the entry visible for this session
+    // (don't roll back; user still sees their work)
+    console.warn("Could not persist to server; entry kept locally for this session.");
+  }
 }
 
 document.querySelectorAll("[data-view]").forEach((button) => {
@@ -292,6 +310,7 @@ function render() {
 
   renderChart(totals.byActivity, totals.total);
   renderEntries(todayEntries);
+  syncGhostFromForm();
 }
 
 function filterEntries(entries, range) {
@@ -363,6 +382,57 @@ function minsToTimeStr(mins) {
 const HOUR_HEIGHT = 64; // px per hour — 30 min = 32px, 15 min = 16px
 const GRID_PAD    = 14; // top offset so first label stays inside the border
 
+// Top-level timeline state — survives re-renders. The form is the single
+// source of truth: any time change in the form (typing, quick buttons, click
+// on the timeline) flows into `syncGhostFromForm`, which positions the ghost
+// to match. Hover never previews — selection is sticky.
+let timelineGrid  = null;
+let timelineGhost = null;
+
+function ensureTimelineGhost() {
+  if (!timelineGrid) return null;
+  // If the ghost was orphaned by a re-render, recreate it inside the new grid
+  if (!timelineGhost || timelineGhost.parentNode !== timelineGrid) {
+    timelineGhost = document.createElement("div");
+    timelineGhost.className = "tl-ghost";
+    timelineGrid.append(timelineGhost);
+  }
+  return timelineGhost;
+}
+
+function showGhostAt(s, end) {
+  const ghost = ensureTimelineGhost();
+  if (!ghost) return;
+  const startMins = TIMELINE_START * 60;
+  const endMins   = TIMELINE_END   * 60;
+  if (!Number.isFinite(s) || !Number.isFinite(end) || end <= s ||
+      s < startMins || end > endMins) {
+    ghost.style.display = "none";
+    return;
+  }
+  const top    = (s - startMins) / 60 * HOUR_HEIGHT + GRID_PAD;
+  const height = Math.max((end - s) / 60 * HOUR_HEIGHT, 22);
+  const dur    = end - s;
+  ghost.style.top     = top + "px";
+  ghost.style.height  = height + "px";
+  ghost.style.display = "";
+  ghost.innerHTML = `
+    <span class="tl-ghost-time">${formatTime(minsToTimeStr(s))} – ${formatTime(minsToTimeStr(end))}</span>
+    ${height >= 40 ? `<span class="tl-ghost-dur">${dur}min</span>` : ""}
+  `;
+}
+
+// Read form values and snap the ghost to match.
+function syncGhostFromForm() {
+  const startStr = startTimeInput.value;
+  const endStr   = endTimeInput.value;
+  if (!startStr || !endStr) {
+    if (timelineGhost) timelineGhost.style.display = "none";
+    return;
+  }
+  showGhostAt(timeToMinutes(startStr), timeToMinutes(endStr));
+}
+
 function renderEntries(todayEntries) {
   entriesList.innerHTML = "";
 
@@ -374,7 +444,8 @@ function renderEntries(todayEntries) {
 
   const grid = document.createElement("div");
   grid.className = "tl-grid";
-  grid.style.height = totalHours * HOUR_HEIGHT + GRID_PAD + "px";
+  // Extra GRID_PAD on the bottom so the last (11 PM) label doesn't get clipped
+  grid.style.height = totalHours * HOUR_HEIGHT + GRID_PAD * 2 + "px";
 
   // ── Period bands (Morning / Noon / Evening) ────────────────────────────────
   const periods = [
@@ -418,38 +489,32 @@ function renderEntries(todayEntries) {
     grid.append(nowEl);
   }
 
-  // ── Click → persistent selection block + pre-fill form ───────────────────
-  let selectionEl = null;
+  // ── Mouse interaction ─────────────────────────────────────────────────────
+  // Form is the single source of truth. The ghost never previews on hover —
+  // it shows the form's current selection and stays there until the user
+  // commits a new selection (by clicking on the timeline, picking a quick
+  // duration, or typing a new time).
+  timelineGrid = grid;
 
   function snapSlot(clientY) {
     const y       = clientY - grid.getBoundingClientRect().top - GRID_PAD;
     const raw     = (y / HOUR_HEIGHT) * 60 + startMins;
     const snapped = Math.round(raw / 15) * 15;
-    const s       = Math.max(startMins, Math.min(snapped, endMins - 30));
-    return { s, end: Math.min(s + 30, endMins) };
-  }
-
-  function placeSelection(s, end) {
-    if (selectionEl) selectionEl.remove();
-    const top    = (s - startMins) / 60 * HOUR_HEIGHT + GRID_PAD;
-    const height = Math.max((end - s) / 60 * HOUR_HEIGHT, 32);
-    selectionEl  = document.createElement("div");
-    selectionEl.className = "tl-selection";
-    selectionEl.style.cssText = `top:${top}px;height:${height}px;`;
-    selectionEl.innerHTML = `
-      <span class="tl-sel-time">${formatTime(minsToTimeStr(s))} – ${formatTime(minsToTimeStr(end))}</span>
-      <span class="tl-sel-dur">${end - s}min</span>
-    `;
-    grid.append(selectionEl);
+    // Preserve the user's currently chosen duration (15m / 30m / 1h / 1.5h)
+    const formStart = startTimeInput.value ? timeToMinutes(startTimeInput.value) : 0;
+    const formEnd   = endTimeInput.value   ? timeToMinutes(endTimeInput.value)   : 0;
+    const dur       = (formEnd > formStart) ? (formEnd - formStart) : 30;
+    const s         = Math.max(startMins, Math.min(snapped, endMins - 15));
+    return { s, end: Math.min(s + dur, endMins) };
   }
 
   grid.addEventListener("click", (e) => {
-    if (e.target.closest(".tl-entry")) return;
+    if (e.target.closest(".tl-entry") || e.target.closest(".tl-delete")) return;
     const { s, end } = snapSlot(e.clientY);
-    placeSelection(s, end);
     startTimeInput.value = minsToTimeStr(s);
     endTimeInput.value   = minsToTimeStr(end);
     syncQuickTimeButtons();
+    showGhostAt(s, end);
     document.querySelector("#activity").focus();
     document.querySelector("#activity").scrollIntoView({ behavior: "smooth", block: "center" });
   });
@@ -465,27 +530,46 @@ function renderEntries(todayEntries) {
     if (eMins <= sMins) continue;
 
     const top    = (sMins - startMins) / 60 * HOUR_HEIGHT + GRID_PAD;
-    const height = Math.max((eMins - sMins) / 60 * HOUR_HEIGHT, 28);
-    const color  = activityColors[colorIndexFor(entry.activity)];
-    const tall   = height >= 42;
+    // Use natural height so adjacent entries don't visually overlap.
+    // 30 min = 32px (fits 22px action icons with 5px above/below).
+    // Sub-30-min entries get min 28px to keep the icons usable.
+    const naturalH = (eMins - sMins) / 60 * HOUR_HEIGHT;
+    const height   = Math.max(naturalH, 28);
+    const color    = activityColors[colorIndexFor(entry.activity)];
+    const tall     = height >= 50;
+    // Compact time format for very short entries: "10:30 – 11:00"
+    const timeStr = `${formatTime(entry.start_time)} – ${formatTime(entry.end_time)}`;
 
     const block = document.createElement("div");
-    block.className = "tl-entry";
+    block.className = "tl-entry" + (tall ? "" : " tl-entry-compact");
     block.style.cssText = `top:${top}px;height:${height}px;border-left-color:${color};background:${color}22;`;
     block.innerHTML = `
       <div class="tl-entry-inner">
-        <span class="tl-entry-name"></span>
-        ${tall ? `<span class="tl-entry-time">${formatTime(entry.start_time)} – ${formatTime(entry.end_time)}</span>` : ""}
+        ${tall
+          ? `<span class="tl-entry-name"></span><span class="tl-entry-time">${timeStr}</span>`
+          : `<span class="tl-entry-row"><span class="tl-entry-name"></span><span class="tl-entry-time-inline">${timeStr}</span></span>`
+        }
       </div>
-      <button class="delete-button tl-delete" type="button" data-id="${entry.id}" aria-label="Delete entry">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg>
-      </button>
+      <div class="tl-actions">
+        <button class="tl-action tl-edit" type="button" data-id="${entry.id}" title="Edit" aria-label="Edit entry">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+        </button>
+        <button class="tl-action tl-delete" type="button" data-id="${entry.id}" title="Delete" aria-label="Delete entry">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14H6L5 6"></path></svg>
+        </button>
+      </div>
     `;
     block.querySelector(".tl-entry-name").textContent = entry.activity;
     grid.append(block);
   }
 
-  // ── Wire delete buttons ────────────────────────────────────────────────────
+  // ── Wire edit + delete buttons ─────────────────────────────────────────────
+  grid.querySelectorAll(".tl-edit").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openEditModal(btn.dataset.id);
+    });
+  });
   grid.querySelectorAll(".tl-delete").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -496,6 +580,10 @@ function renderEntries(todayEntries) {
   });
 
   entriesList.append(grid);
+
+  // Reposition the ghost inside the freshly rendered grid based on the form
+  timelineGhost = null; // old node was removed when we cleared entriesList
+  syncGhostFromForm();
 }
 
 function formatMinutes(minutes) {
