@@ -51,7 +51,8 @@ const chart = document.querySelector("#chart");
 const entriesList = document.querySelector("#timeline");
 const template = document.querySelector("#entry-template");
 
-initTimeInputs();
+// Form starts empty — nothing is "selected" until the user clicks a slot
+// on the timeline (or types a time directly). No ghost is shown on load.
 
 document.querySelectorAll("[data-minutes]").forEach((button) => {
   button.addEventListener("click", () => {
@@ -101,23 +102,14 @@ async function handleSubmit(data) {
 
   state.entries.unshift(tempEntry);
 
-  // Smart re-init: advance the form to the next 30-min slot right after the
-  // just-saved entry so logging consecutive activities is fast. Falls back to
-  // current time if the saved entry's end is past the timeline window.
-  const savedEndMins = timeToMinutes(endTime);
-  const nextStart    = savedEndMins;
-  const nextEnd      = nextStart + 30;
-  if (nextEnd <= TIMELINE_END * 60) {
-    document.querySelector("#activity").value = "";
-    startTimeInput.value = minutesToTime(nextStart);
-    endTimeInput.value   = minutesToTime(nextEnd);
-  } else {
-    form.reset();
-    initTimeInputs();
-  }
+  // Clear the form completely after saving — no auto-selected next slot,
+  // no auto-filled times. The next entry starts from scratch when the user
+  // clicks a new slot on the timeline.
+  form.reset();
   syncQuickTimeButtons();
+  syncGhostFromForm(); // hides the ghost since the form is now empty
   flashSaved();
-  render(); // show entry immediately in the timeline
+  render();
 
   // Persist to server in the background; swap temp entry with server's version
   try {
@@ -714,13 +706,6 @@ function calcMinutes(startTime, endTime) {
   let diff = timeToMinutes(endTime) - timeToMinutes(startTime);
   if (diff <= 0) diff += 1440;
   return diff;
-}
-
-function initTimeInputs() {
-  const now = new Date();
-  now.setMinutes(Math.floor(now.getMinutes() / 5) * 5, 0, 0);
-  startTimeInput.value = minutesToTime(now.getHours() * 60 + now.getMinutes());
-  endTimeInput.value = minutesToTime(now.getHours() * 60 + now.getMinutes() + 30);
 }
 
 function formatTime(timeStr) {
