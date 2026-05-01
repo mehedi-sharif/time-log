@@ -45,7 +45,8 @@ export const DELETE: APIRoute = async ({ params }) => {
   const { error } = await supabase.from("logs").delete().eq("id", id);
 
   if (error) {
-    return json({ error: "Failed to delete log." }, 500);
+    console.error("Supabase logs.delete error:", error);
+    return json({ error: "Failed to delete log.", detail: error.message, code: error.code }, 500);
   }
 
   return json({ ok: true });
