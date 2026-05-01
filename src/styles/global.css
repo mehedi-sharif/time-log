@@ -539,12 +539,18 @@ textarea {
 }
 
 .tl-entry-inner {
-  padding: 3px 56px 3px 6px;
+  padding: 3px 8px 3px 6px;
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 1px;
+}
+
+/* When hovering, reserve room on the right so the icons don't overlap text */
+.tl-entry:hover .tl-entry-inner,
+.tl-entry:focus-within .tl-entry-inner {
+  padding-right: 56px;
 }
 
 .tl-entry-name {
@@ -566,10 +572,15 @@ textarea {
 
 /* Compact (single-line) entry layout — used when block is too short for two rows */
 .tl-entry-compact .tl-entry-inner {
-  padding: 3px 56px 3px 6px;
+  padding: 3px 8px 3px 6px;
   flex-direction: row;
   align-items: center;
   gap: 6px;
+}
+
+.tl-entry-compact:hover .tl-entry-inner,
+.tl-entry-compact:focus-within .tl-entry-inner {
+  padding-right: 56px;
 }
 
 .tl-entry-row {
@@ -593,7 +604,7 @@ textarea {
   font-weight: 500;
 }
 
-/* Horizontal edit + delete actions on every timeline entry */
+/* Horizontal edit + delete actions — hidden until you hover this entry */
 .tl-actions {
   position: absolute;
   top: 3px;
@@ -602,6 +613,24 @@ textarea {
   flex-direction: row;
   gap: 3px;
   z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.tl-entry:hover .tl-actions,
+.tl-entry:focus-within .tl-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Touch devices: show actions when the entry is tapped/active.
+   On a non-hover device, :hover sticks after a tap until you tap elsewhere. */
+@media (hover: none) {
+  .tl-entry:active .tl-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .tl-action {
@@ -745,7 +774,10 @@ textarea {
     right: 4px;
   }
 
-  .tl-entry-inner {
+  .tl-entry:hover .tl-entry-inner,
+  .tl-entry:focus-within .tl-entry-inner,
+  .tl-entry-compact:hover .tl-entry-inner,
+  .tl-entry-compact:focus-within .tl-entry-inner {
     padding-right: 50px;
   }
 
