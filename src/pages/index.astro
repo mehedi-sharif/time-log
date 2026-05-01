@@ -27,10 +27,10 @@ import "../styles/global.css";
     </header>
 
     <main class="app-shell">
-      <div class="grid grid-cols-12 gap-6 items-start">
-        <div class="col-span-12 lg:col-span-7 main-content">
+      <div class="grid grid-cols-12 gap-4 sm:gap-6 items-start">
+        <div class="col-span-12 lg:col-span-7 flex flex-col">
           <section class="toolbar" aria-label="App sections">
-            <div class="tabs" role="tablist" aria-label="Main sections">
+            <div class="tabs inline-flex gap-1 p-1" role="tablist" aria-label="Main sections">
               <button class="tab active" type="button" data-view="log">Log time</button>
               <button class="tab" type="button" data-view="insights">Insights</button>
               <button class="tab" type="button" data-view="goals">Goals</button>
@@ -38,11 +38,11 @@ import "../styles/global.css";
           </section>
 
           <section class="view active" id="log-view" data-panel="log" aria-label="Log time">
-            <article class="panel log-panel">
-              <form id="entry-form">
+            <article class="panel">
+              <form id="entry-form" class="grid gap-3.5">
                 <label for="activity">What did you do?</label>
                 <input id="activity" name="activity" type="text" required />
-                <div class="time-range">
+                <div class="grid grid-cols-[1fr_auto_1fr] items-end gap-2 sm:gap-2.5">
                   <label>
                     From
                     <input id="start-time" name="start_time" type="time" required />
@@ -53,13 +53,13 @@ import "../styles/global.css";
                     <input id="end-time" name="end_time" type="time" required />
                   </label>
                 </div>
-                <span class="quick-times" aria-label="Quick duration">
+                <span class="quick-times flex flex-wrap gap-2" aria-label="Quick duration">
                   <button type="button" data-minutes="15">15m</button>
                   <button type="button" data-minutes="30" class="selected">30m</button>
                   <button type="button" data-minutes="60">1h</button>
                   <button type="button" data-minutes="90">1.5h</button>
                 </span>
-                <button id="save-btn" class="primary-button" type="submit" style="margin-top: 12px;">
+                <button id="save-btn" class="primary-button mt-3" type="submit">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M12 5v14"></path>
                     <path d="M5 12h14"></path>
@@ -71,17 +71,17 @@ import "../styles/global.css";
           </section>
 
           <section class="view" id="insights-view" data-panel="insights" aria-label="Time insights">
-            <article class="panel insight-panel">
+            <article class="panel">
               <div class="panel-heading">
                 <h2>Where time went</h2>
                 <span id="range-label">Today</span>
               </div>
-              <div class="range-tabs" role="tablist" aria-label="Insight range">
+              <div class="range-tabs flex flex-wrap gap-2 mb-4" role="tablist" aria-label="Insight range">
                 <button class="range-tab active" type="button" data-range="today">Today</button>
                 <button class="range-tab" type="button" data-range="week">Week</button>
                 <button class="range-tab" type="button" data-range="all">All</button>
               </div>
-              <div class="stat-row">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 stat-row">
                 <div>
                   <span>Total time</span>
                   <strong id="total-time">0h 00m</strong>
@@ -95,27 +95,28 @@ import "../styles/global.css";
                   <strong id="log-count-stat">0</strong>
                 </div>
               </div>
-              <div class="chart" id="chart" aria-label="Activity time chart"></div>
+              <div class="grid gap-3" id="chart" aria-label="Activity time chart"></div>
             </article>
           </section>
+
           <section class="view" id="goals-view" data-panel="goals" aria-label="Goals">
-            <article class="panel goals-panel">
+            <article class="panel">
               <div class="panel-heading">
                 <h2>Goals</h2>
                 <span id="goals-count">0 goals</span>
               </div>
               <form id="goal-form">
-                <div class="goal-input-row">
-                  <input id="goal-input" name="goal" type="text" placeholder="Add a new goal…" required />
-                  <button class="primary-button" type="submit">Add</button>
+                <div class="flex gap-2.5 mb-5">
+                  <input id="goal-input" name="goal" type="text" placeholder="Add a new goal…" required class="flex-1" />
+                  <button class="primary-button whitespace-nowrap px-5" type="submit">Add</button>
                 </div>
               </form>
-              <div id="goals-list"></div>
+              <div id="goals-list" class="grid gap-2.5"></div>
             </article>
           </section>
         </div>
 
-        <aside class="col-span-12 lg:col-span-5 order-first lg:order-none side-panel">
+        <aside class="col-span-12 lg:col-span-5 flex flex-col gap-3 lg:sticky lg:top-6">
           <div class="today-card" aria-label="Today summary">
             <span class="today-label">Today</span>
             <strong id="today-total">0h 00m</strong>
@@ -126,8 +127,8 @@ import "../styles/global.css";
     </main>
 
     <template id="entry-template">
-      <div class="entry-card">
-        <div class="entry-main">
+      <div class="entry-card flex justify-between gap-3 p-3.5">
+        <div class="entry-main flex min-w-0 gap-3">
           <span class="activity-dot"></span>
           <div>
             <strong class="entry-title"></strong>
@@ -135,7 +136,7 @@ import "../styles/global.css";
             <p class="entry-notes"></p>
           </div>
         </div>
-        <div class="entry-actions">
+        <div class="entry-actions flex flex-col gap-1.5 flex-none">
           <button class="edit-button" type="button" title="Edit entry" aria-label="Edit entry">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
@@ -153,8 +154,8 @@ import "../styles/global.css";
     </template>
 
     <template id="goal-template">
-      <div class="goal-card">
-        <label class="goal-check-label">
+      <div class="goal-card flex items-center justify-between gap-3 p-3.5">
+        <label class="goal-check-label flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer">
           <input type="checkbox" class="goal-checkbox" />
           <span class="goal-title"></span>
         </label>
@@ -168,11 +169,11 @@ import "../styles/global.css";
       </div>
     </template>
 
-    <div id="auth-gate">
-      <div class="auth-box">
+    <div id="auth-gate" class="fixed inset-0 z-[999] flex items-center justify-center">
+      <div class="auth-box grid gap-1.5">
         <p class="eyebrow">Time Log</p>
         <h2>Enter password</h2>
-        <form id="auth-form">
+        <form id="auth-form" class="grid gap-3">
           <input id="auth-input" type="password" placeholder="Password" autocomplete="current-password" />
           <p id="auth-error" class="auth-error"></p>
           <button class="primary-button" type="submit">Unlock</button>
@@ -183,12 +184,12 @@ import "../styles/global.css";
     <div id="edit-modal" class="modal-backdrop hidden">
       <div class="modal-box">
         <h2>Edit entry</h2>
-        <form id="edit-form">
+        <form id="edit-form" class="grid gap-3.5 text-left">
           <label>
             What did you do?
             <input id="edit-activity" name="activity" type="text" required />
           </label>
-          <div class="time-range">
+          <div class="grid grid-cols-[1fr_auto_1fr] items-end gap-2.5">
             <label>
               From
               <input id="edit-start-time" name="start_time" type="time" required />
@@ -199,7 +200,7 @@ import "../styles/global.css";
               <input id="edit-end-time" name="end_time" type="time" required />
             </label>
           </div>
-          <div class="modal-actions">
+          <div class="flex gap-2.5 justify-end mt-2">
             <button id="edit-cancel" class="modal-btn" type="button">Cancel</button>
             <button class="modal-btn primary" type="submit">Save</button>
           </div>
@@ -210,7 +211,7 @@ import "../styles/global.css";
     <div id="confirm-modal" class="modal-backdrop hidden">
       <div class="modal-box">
         <p>Delete this entry?</p>
-        <div class="modal-actions">
+        <div class="flex gap-2.5 justify-center">
           <button id="confirm-cancel" class="modal-btn" type="button">Cancel</button>
           <button id="confirm-delete" class="modal-btn danger" type="button">Delete</button>
         </div>

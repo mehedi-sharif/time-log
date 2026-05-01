@@ -65,19 +65,8 @@ svg {
 }
 
 
-.main-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.side-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  position: sticky;
-  top: 24px;
-}
+/* Layout containers (.main-content, .side-panel) now use Tailwind utility
+   classes directly in the markup — col-span-* / flex flex-col / lg:sticky etc. */
 
 .eyebrow,
 .today-label {
@@ -147,19 +136,9 @@ h2 {
 }
 
 .tabs {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #eef4ef;
-}
-
-.range-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 18px;
 }
 
 .tab,
@@ -203,21 +182,13 @@ h2 {
   border: 1px solid var(--line);
 }
 
+/* JS toggles `.active` to switch between Log time / Insights / Goals views */
 .view {
   display: none;
 }
 
 .view.active {
-  display: grid;
-  gap: 18px;
-  align-items: start;
-}
-
-.view.active#log-view,
-.view.active#insights-view,
-.view.active#logs-view,
-.view.active#goals-view {
-  grid-template-columns: minmax(280px, 760px);
+  display: block;
 }
 
 .panel {
@@ -252,11 +223,6 @@ h2 {
   background: var(--green);
 }
 
-form {
-  display: grid;
-  gap: 14px;
-}
-
 label {
   display: grid;
   gap: 8px;
@@ -288,30 +254,11 @@ textarea {
   resize: vertical;
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.time-range {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: end;
-  gap: 10px;
-}
-
 .time-sep {
   color: var(--muted);
   font-size: 1.1rem;
   padding-bottom: 13px;
   text-align: center;
-}
-
-.quick-times {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
 }
 
 .quick-times button {
@@ -345,14 +292,8 @@ textarea {
   background: var(--accent-dark);
 }
 
-.stat-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.stat-row div {
+/* Stat-row layout = Tailwind grid grid-cols-1 sm:grid-cols-3 in markup */
+.stat-row > div {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -372,17 +313,7 @@ textarea {
   font-size: 1.18rem;
 }
 
-.chart {
-  display: grid;
-  gap: 13px;
-}
-
-.bar-row {
-  display: grid;
-  grid-template-columns: 88px 1fr 72px;
-  gap: 12px;
-  align-items: center;
-}
+/* .chart and .bar-row layouts use Tailwind grid utilities directly */
 
 .bar-label,
 .bar-time {
@@ -409,44 +340,15 @@ textarea {
   min-height: 420px;
 }
 
-.goal-input-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.goal-input-row input {
-  flex: 1;
-}
-
-.goal-input-row .primary-button {
-  white-space: nowrap;
-  padding: 0 20px;
-}
-
-#goals-list {
-  display: grid;
-  gap: 10px;
-}
-
+/* Goal-input-row, goals-list, goal-card and goal-check-label
+   layouts now come from Tailwind utilities in markup. */
 .goal-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #ffffff;
 }
 
 .goal-check-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  flex: 1;
-  min-width: 0;
   font-weight: 400;
   color: var(--ink);
 }
@@ -738,19 +640,9 @@ textarea {
 
 
 .entry-card {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #ffffff;
-}
-
-.entry-main {
-  display: flex;
-  min-width: 0;
-  gap: 11px;
 }
 
 .activity-dot {
@@ -778,13 +670,6 @@ textarea {
 
 .entry-notes:empty {
   display: none;
-}
-
-.entry-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 0 0 auto;
 }
 
 .edit-button,
@@ -822,17 +707,15 @@ textarea {
   height: 16px;
 }
 
+/* Side-panel: column + sticky behaviour on >= lg comes from Tailwind utilities
+   in the markup (`flex flex-col gap-3 lg:sticky lg:top-6`).  Below lg the same
+   classes give a non-sticky stacked column. So no @media rule is needed for
+   that anymore. */
+
 @media (max-width: 860px) {
   .app-shell {
     width: min(100% - 24px, 680px);
     padding-top: 0;
-  }
-
-  /* Stay column on mobile so the timeline gets full width below the today card */
-  .side-panel {
-    position: static;
-    flex-direction: column;
-    gap: 12px;
   }
 
   .today-card {
@@ -898,10 +781,6 @@ textarea {
 
   .today-card {
     padding: 14px;
-  }
-
-  .side-panel {
-    gap: 8px;
   }
 
   .tabs {
@@ -1024,6 +903,7 @@ textarea {
   justify-content: center;
   background: rgba(22, 33, 31, 0.45);
 }
+/* (kept as a single block — modal centering is the same on all screens) */
 
 .modal-backdrop.hidden {
   display: none;
@@ -1045,15 +925,6 @@ textarea {
   text-align: left;
 }
 
-#edit-form {
-  text-align: left;
-}
-
-#edit-form .modal-actions {
-  margin-top: 20px;
-  justify-content: flex-end;
-}
-
 .modal-btn.primary {
   background: var(--accent);
   border-color: var(--accent);
@@ -1064,12 +935,6 @@ textarea {
   margin-bottom: 20px;
   font-size: 1rem;
   font-weight: 700;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
 }
 
 .modal-btn {
@@ -1089,12 +954,6 @@ textarea {
 }
 
 #auth-gate {
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: var(--paper);
 }
 
@@ -1109,17 +968,10 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 12px;
   box-shadow: var(--shadow);
-  display: grid;
-  gap: 6px;
 }
 
 .auth-box h2 {
   margin-bottom: 20px;
-}
-
-#auth-form {
-  display: grid;
-  gap: 12px;
 }
 
 .auth-error {

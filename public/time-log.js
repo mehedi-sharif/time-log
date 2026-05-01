@@ -375,7 +375,7 @@ function renderChart(byActivity, total) {
     .sort((a, b) => b[1] - a[1])
     .forEach(([activity, minutes], index) => {
       const row = document.createElement("div");
-      row.className = "bar-row";
+      row.className = "bar-row grid grid-cols-1 sm:grid-cols-[88px_1fr_72px] gap-2 sm:gap-3 items-center";
       row.innerHTML = `
         <span class="bar-label"></span>
         <span class="bar-track"><span class="bar-fill"></span></span>
